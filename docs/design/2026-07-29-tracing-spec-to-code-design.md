@@ -1,7 +1,8 @@
 # tracing-spec-to-code 设计
 
-- 状态：待书面评审
+- 状态：已批准
 - 日期：2026-07-29
+- 批准日期：2026-07-29
 - 项目：`tracing-spec-to-code`
 - 设计范围：独立 Codex skill 及其跨客户端分发方式
 
@@ -595,4 +596,4 @@ Validator 不检查：
 - canonical skill 与客户端 registry 避免多份 workflow 漂移。
 - 验证方案包含无指导基线、加载后压力测试和合理化闭环。
 
-本设计获书面批准前，不创建实现计划，也不实现 `SKILL.md`、validator、installer 或测试。
+本设计已于 2026-07-29 获用户批准。实现仍需先通过 roadmap 与当前 milestone plan 的 Gate P；在此之前不实现 `SKILL.md`、validator、installer 或测试。
