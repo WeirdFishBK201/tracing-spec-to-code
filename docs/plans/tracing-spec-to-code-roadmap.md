@@ -1,8 +1,10 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：Awaiting Gate P
+- 状态：M01 Completed — M02 awaiting approval
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
+- Gate P：Approved on 2026-07-30
+- Gate Δ：CP-01, CP-02, and CP-03 Approved on 2026-07-30
 - 当前详细计划：`docs/plans/tracing-spec-to-code-m01-artifact-contracts.md`
 
 ## 规则
@@ -46,4 +48,4 @@
 
 ## Gate P
 
-Gate P 批准后只执行 M01。M02–M05 不在本 roadmap 中展开 task。
+Gate P 已于 2026-07-30 批准；只执行 M01。M02–M05 不在本 roadmap 中展开 task。

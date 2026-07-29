@@ -1,0 +1,10 @@
+{
+  "spec_dir": "docs/specs",
+  "plan_dir": "docs/plans",
+  "change_dir": "docs/changes",
+  "feature_slug": "my-feature",
+  "spec_filename_template": "{feature}-spec.md",
+  "roadmap_filename_template": "{feature}-roadmap.md",
+  "milestone_plan_filename_template": "{feature}-m{milestone}-{milestone_slug}.md",
+  "change_proposal_filename_template": "{feature}-cp{proposal}-{proposal_slug}.md"
+}

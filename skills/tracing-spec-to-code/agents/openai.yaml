@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tracing Spec to Code"
+  short_description: "Validate spec-to-code artifact contracts"
+  default_prompt: "Use $tracing-spec-to-code to validate spec, roadmap, and milestone artifacts."
