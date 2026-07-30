@@ -1,12 +1,12 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：Awaiting Gate P — M05 Evaluation and release
+- 状态：In Progress — M05 Evaluation and release
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
-- Gate P：Approved — M01 through M04 on 2026-07-30; M05 awaiting detailed plan
+- Gate P：Approved — M01 through M05 on 2026-07-30
 - Gate Δ：CP-01 through CP-08 Approved on 2026-07-30
 - Current milestone：M05
-- 当前详细计划：Awaiting M05 plan approval
+- 当前详细计划：`docs/plans/tracing-spec-to-code-m05-evaluation-release.md`
 - M05 design：`docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
 
 ## 规则
@@ -56,4 +56,4 @@
 
 ## Gate P
 
-M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 已于 2026-07-30 获得用户批准，当前等待详细 plan 与新的 Gate P；长期目标不得提前展开详细 task。
+M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 与 Gate P 已于 2026-07-30 获得用户批准，当前按 `docs/plans/tracing-spec-to-code-m05-evaluation-release.md` 执行；长期目标不得提前展开详细 task。
