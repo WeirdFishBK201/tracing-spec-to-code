@@ -1,6 +1,6 @@
 # tracing-spec-to-code
 
-`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan artifact contracts. M02 adds gated milestone workflow rules while retaining M01 validation of configured Markdown artifacts, stable Requirement IDs, task IDs, and cross-artifact references.
+`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan → Evidence contracts. M03 adds read-only precommit checks and a safe, exact-scope milestone commit policy while retaining M01 artifact validation and M02 gated workflow rules.
 
 ## Requirements
 
@@ -34,6 +34,19 @@ python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py validate --re
 ```
 
 An invalid or missing explicit config fails closed; the validator does not fall back to guessed paths.
+
+Before committing a completed milestone, stage only the exact paths recorded in
+its approved plan, then run:
+
+```text
+python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py precommit --repo <repository> --plan <exact-milestone-plan> --format json
+```
+
+`precommit` validates canonical traceability, task completion, targeted and
+broader verification, approved proposals, baseline dirty paths, exact staged
+scope, and the commit draft. It is read-only: the Skill performs the separately
+approved `git --literal-pathspecs add -- <exact paths>` and one normal
+`git commit`; ordinary pathspec interpretation is prohibited.
 
 ## Default artifact contract
 
@@ -104,11 +117,20 @@ Stable M02 workflow codes:
 - `TASK_COUNT_INVALID`
 - `CHANGE_PROPOSAL_PENDING`
 
+Stable M03 evidence and commit codes:
+
+- `EVIDENCE_INCOMPLETE`
+- `VERIFICATION_NOT_PASSED`
+- `STAGED_SCOPE_INVALID`
+- `COMMIT_MESSAGE_INVALID`
+
 ## Current boundaries
 
-The validator checks deterministic paths, filename templates, required Markdown sections, IDs, workflow metadata, and references. It reports recorded gate state but does not grant approval, judge requirement quality, implementation correctness, or test adequacy, or rewrite facts.
+The validator checks deterministic paths, filename templates, required Markdown sections, IDs, workflow metadata, references, recorded evidence, staged scope, and commit message contracts. It reports recorded state but does not grant approval, judge requirement quality, implementation correctness, test adequacy, or rewrite facts.
 
-M02 does not enforce Git or evidence persistence, install the Skill or dependencies, or evaluate release readiness. Those remain outside the implemented milestone.
+The Skill refuses broad staging, failed verification, baseline overlap, Git bypasses, automatic cleanup, and remote operations. A successful local milestone commit does not authorize push, PR, merge, fetch, pull, or remote mutation.
+
+M03 does not install the Skill or dependencies or evaluate release readiness. Those remain outside the implemented milestone.
 
 The repository is independent of other projects and does not read or modify them.
 

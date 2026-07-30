@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 from tstc.config import ConfigError
+from tstc.precommit import PrecommitRuntimeError, validate_precommit
 from tstc.validation import validate_repository
 
 
@@ -17,6 +18,15 @@ def _build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--repo", type=Path, default=Path("."))
     validate_parser.add_argument("--config", type=Path)
     validate_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+    )
+    precommit_parser = subparsers.add_parser("precommit")
+    precommit_parser.add_argument("--repo", type=Path, default=Path("."))
+    precommit_parser.add_argument("--plan", type=Path, required=True)
+    precommit_parser.add_argument("--config", type=Path)
+    precommit_parser.add_argument(
         "--format",
         choices=("text", "json"),
         default="text",
@@ -34,10 +44,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 2
     try:
-        issues = validate_repository(repo_root, args.config)
+        if args.command == "precommit":
+            issues = validate_precommit(
+                repo_root,
+                args.plan,
+                args.config,
+            )
+        else:
+            issues = validate_repository(repo_root, args.config)
     except ConfigError as error:
         print(
             f"{error.code} {error.path}: {error.message}",
+            file=sys.stderr,
+        )
+        return 2
+    except PrecommitRuntimeError as error:
+        print(
+            f"PRECOMMIT_RUNTIME {error.message}",
             file=sys.stderr,
         )
         return 2

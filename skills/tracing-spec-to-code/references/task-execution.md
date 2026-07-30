@@ -71,6 +71,9 @@ TDD RED.
    next task and broader verification before milestone completion.
 5. Do not mark a task or milestone complete while required verification is
    missing or failing.
+6. When the milestone is complete, read and follow
+   [milestone-commit.md](milestone-commit.md) before staging, committing, or
+   reporting delivery.
 
 ## Deliver without a report artifact
 
@@ -88,4 +91,4 @@ Include:
 - optionally, the next milestone name without a detailed plan.
 
 The displayed summary is not the evidence source and does not authorize the
-next milestone.
+next milestone or any remote Git operation.

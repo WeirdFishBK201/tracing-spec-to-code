@@ -8,6 +8,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.test_git_checks import (
+    PLAN_RELATIVE,
+    prepare_repository,
+    require_git,
+    write_proposal,
+)
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CLI_PATH = (
@@ -163,6 +170,151 @@ class CliBehaviorTests(unittest.TestCase):
             self.assertEqual("", result.stdout)
             self.assertIn("repository directory does not exist", result.stderr)
             self.assertNotIn("Traceback", result.stderr)
+
+    def test_precommit_valid_state_returns_zero_with_stable_json(self) -> None:
+        # Break caught: the precommit CLI cannot expose a machine-readable success.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = prepare_repository(temp_dir)
+
+            result = run_cli(
+                "precommit",
+                "--repo",
+                str(repo_root),
+                "--plan",
+                PLAN_RELATIVE.as_posix(),
+                "--format",
+                "json",
+            )
+
+        self.assertEqual(0, result.returncode)
+        self.assertEqual("", result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual({"issues": [], "valid": True}, payload)
+
+    def test_precommit_issue_returns_one_on_stdout_with_json_schema(self) -> None:
+        # Break caught: staged-scope blockers are misclassified as runtime failures.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = prepare_repository(temp_dir)
+            require_git(repo_root, "add", "--", "user-notes.txt")
+
+            result = run_cli(
+                "precommit",
+                "--repo",
+                str(repo_root),
+                "--plan",
+                PLAN_RELATIVE.as_posix(),
+                "--format",
+                "json",
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertEqual("", result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual({"issues", "valid"}, set(payload))
+        self.assertFalse(payload["valid"])
+        self.assertTrue(
+            any(
+                issue["code"] == "STAGED_SCOPE_INVALID"
+                for issue in payload["issues"]
+            )
+        )
+        self.assertTrue(
+            all(
+                set(issue) == {"code", "path", "line", "message"}
+                for issue in payload["issues"]
+            )
+        )
+
+    def test_precommit_git_runtime_failure_returns_two_on_stderr(self) -> None:
+        # Break caught: non-Git repositories produce a traceback or issue exit 1.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = prepare_repository(temp_dir, initialize_git=False)
+
+            result = run_cli(
+                "precommit",
+                "--repo",
+                str(repo_root),
+                "--plan",
+                PLAN_RELATIVE.as_posix(),
+            )
+
+        self.assertEqual(2, result.returncode)
+        self.assertEqual("", result.stdout)
+        self.assertNotEqual("", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertNotIn("usage:", result.stderr)
+
+    def test_precommit_malformed_plan_is_json_issue_not_runtime(self) -> None:
+        # Break caught: deterministic artifact syntax defects are sent to stderr.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = prepare_repository(temp_dir)
+            plan_path = repo_root / PLAN_RELATIVE
+            plan_path.write_text(
+                plan_path.read_text(encoding="utf-8").replace(
+                    "## Tasks",
+                    "## Work",
+                ),
+                encoding="utf-8",
+            )
+            require_git(repo_root, "add", "--", PLAN_RELATIVE.as_posix())
+
+            result = run_cli(
+                "precommit",
+                "--repo",
+                str(repo_root),
+                "--plan",
+                PLAN_RELATIVE.as_posix(),
+                "--format",
+                "json",
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertEqual("", result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(
+            any(
+                issue["code"] == "ARTIFACT_PARSE_ERROR"
+                for issue in payload["issues"]
+            )
+        )
+
+    def test_precommit_malformed_proposal_metadata_is_json_issue(self) -> None:
+        # Break caught: deterministic proposal metadata defects use runtime exit 2.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = prepare_repository(temp_dir, initialize_git=False)
+            proposal = write_proposal(
+                repo_root,
+                proposal_id="CP-02",
+                task_id="M01-T01",
+            )
+            proposal.write_text(
+                proposal.read_text(encoding="utf-8").replace(
+                    "- Affected tasks: M01-T01",
+                    "- Affected tasks:",
+                ),
+                encoding="utf-8",
+            )
+
+            result = run_cli(
+                "precommit",
+                "--repo",
+                str(repo_root),
+                "--plan",
+                PLAN_RELATIVE.as_posix(),
+                "--format",
+                "json",
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertEqual("", result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(
+            any(
+                issue["code"] == "EVIDENCE_INCOMPLETE"
+                and issue["path"].endswith(proposal.name)
+                for issue in payload["issues"]
+            )
+        )
 
 
 if __name__ == "__main__":

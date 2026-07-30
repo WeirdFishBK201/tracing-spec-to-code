@@ -1,4 +1,4 @@
 interface:
   display_name: "Tracing Spec to Code"
-  short_description: "Plan and validate gated spec-to-code milestones"
-  default_prompt: "Use $tracing-spec-to-code to plan and validate the next gated spec-to-code milestone."
+  short_description: "Plan, validate, and safely commit gated milestones"
+  default_prompt: "Use $tracing-spec-to-code to plan, validate, and safely commit the current gated milestone."

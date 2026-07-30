@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
 from .artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
 from .config import load_config
+from .issues import ValidationIssue, sort_issues
 
 
 _KNOWN_STATUSES = {
@@ -18,15 +18,6 @@ _KNOWN_STATUSES = {
     "Rejected",
 }
 _COMPLETED_STATUSES = {"Completed", "Delivered"}
-
-
-@dataclass(frozen=True)
-class ValidationIssue:
-    code: str
-    path: Path
-    line: int
-    message: str
-
 
 def _gate_status(artifact: object, name: str) -> tuple[str | None, int]:
     matches = [
@@ -81,14 +72,7 @@ def validate_repository(
                 )
             )
     if issues:
-        return sorted(
-            issues,
-            key=lambda issue: (
-                issue.path.as_posix().casefold(),
-                issue.line,
-                issue.code,
-            ),
-        )
+        return sort_issues(issues)
 
     for artifact in artifacts:
         if (
@@ -481,11 +465,4 @@ def validate_repository(
                         ),
                     )
                 )
-    return sorted(
-        issues,
-        key=lambda issue: (
-            issue.path.as_posix().casefold(),
-            issue.line,
-            issue.code,
-        ),
-    )
+    return sort_issues(issues)

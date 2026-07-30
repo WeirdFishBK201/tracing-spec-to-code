@@ -18,6 +18,8 @@ artifact checks. Unknown or conflicting workflow state fails closed.
   next milestone.
 - Read [task-execution.md](references/task-execution.md) before implementing,
   testing, closing a task, or delivering a milestone.
+- Read [milestone-commit.md](references/milestone-commit.md) before staging,
+  committing, or reporting delivery of a completed milestone.
 - Apply both references when a task discovers a fact or scope conflict.
 
 Do not replace these policies with inferred repository conventions, urgency, or
@@ -42,6 +44,16 @@ For CI or other machine consumers, request JSON:
 ```text
 python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py validate --repo . --format json
 ```
+
+Before a milestone commit, stage only its exact plan scope and run:
+
+```text
+python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py precommit \
+  --repo . --plan <exact-milestone-plan> --format json
+```
+
+`precommit` is read-only. It does not stage, commit, clean the index, or contact
+a remote.
 
 Keep stdout available for the result. Treat stderr as argument, configuration,
 or runtime diagnostics.
@@ -78,8 +90,10 @@ unknown keys, unsafe paths, and invalid templates fail closed.
 - Deterministic validation does not judge requirement quality, implementation
   correctness, test adequacy, or whether a change should be approved.
 - Do not read, depend on, or modify unrelated repositories.
-- Do not claim Git/evidence enforcement, installation, or release evaluation
-  capabilities that this milestone has not implemented.
+- Milestone commit permission never authorizes push, PR, merge, fetch, pull,
+  remote changes, or automatic index/worktree cleanup.
+- Do not claim installation or release evaluation capabilities that this
+  milestone has not implemented.
 
 ## Common mistakes
 

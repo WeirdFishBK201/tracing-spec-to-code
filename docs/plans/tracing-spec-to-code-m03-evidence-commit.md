@@ -2,13 +2,13 @@
 
 > **For agentic workers:** Execute only one task at a time with a fresh bounded context packet and independent spec/quality review at each checkpoint.
 
-- Status: Draft — Awaiting Gate P
+- Status: Approved — In Progress
 - Milestone: M03 — Evidence and commit
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
 - Design: `docs/design/2026-07-30-tracing-spec-to-code-m03-evidence-commit-design.md`
 - Requirements: REQ-TS2C-010, REQ-TS2C-011, REQ-TS2C-012, REQ-TS2C-016
-- Gate P: Pending
+- Gate P: Approved on 2026-07-30
 
 ## Goal
 
@@ -74,20 +74,7 @@ Exit `0/1/2` 与现有 `validate` 一致；`precommit` 不修改 worktree、inde
 
 ## Planned files
 
-| Path | Responsibility |
-|---|---|
-| `skills/tracing-spec-to-code/scripts/tstc/issues.py` | Shared `ValidationIssue` and stable sorting |
-| `skills/tracing-spec-to-code/scripts/tstc/evidence.py` | Evidence/traceability/commit-scope parsing and validation |
-| `skills/tracing-spec-to-code/scripts/tstc/git_checks.py` | Read-only Git index and commit-message checks |
-| `skills/tracing-spec-to-code/scripts/tstc/precommit.py` | Compose repository, evidence, and Git checks |
-| `skills/tracing-spec-to-code/scripts/tstc/validation.py` | Reuse shared issue contract |
-| `skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py` | Add read-only `precommit --plan` command |
-| `skills/tracing-spec-to-code/references/milestone-commit.md` | Exact staging/commit/failure policy |
-| `skills/tracing-spec-to-code/SKILL.md`, `references/task-execution.md` | Route milestone delivery to commit policy |
-| `skills/tracing-spec-to-code/assets/templates/milestone-plan.md` | Canonical M03 evidence sections |
-| `skills/tracing-spec-to-code/agents/openai.yaml`, `README.md` | M03 discovery, usage, codes, and boundaries |
-| `tests/test_evidence.py`, `tests/test_git_checks.py`, `tests/test_cli.py`, `tests/test_validation.py` | Unit, regression, CLI, and temp-Git behavior |
-| `tests/scenarios/m03/*.md` | Scope, failed-verification, and Git-failure pressure scenarios |
+实现限于 validator/evidence/Git policy、canonical Skill 路由与文档、M03 scenarios/tests，以及本 plan 和 roadmap；最终精确路径见 Commit scope。
 
 ## Tasks
 
@@ -133,7 +120,7 @@ Exit `0/1/2` 与现有 `validate` 一致；`precommit` 不修改 worktree、inde
 
 **Files:** 创建 `references/milestone-commit.md`, `tests/scenarios/m03/{scope-pressure,verification-failure,git-failure}.md`；修改 `SKILL.md`, `references/task-execution.md`, `README.md`, `agents/openai.yaml` 和本 plan Evidence。
 
-**Interfaces:** Skill 运行 T02 `precommit --plan`，从批准 plan 读取 exact scope/message，执行 `git add -- <paths>` 与一次 `git commit`，再验证 HEAD；不调用 remote operations。
+**Interfaces:** Skill 运行 T02 `precommit --plan`，从批准 plan 读取 exact scope/message，执行 `git --literal-pathspecs add -- <exact paths>` 与一次 `git commit`，再验证 HEAD；禁止普通 pathspec 解释且不调用 remote operations。
 
 **Testing strategy:** Fresh-agent behavior + temporary Git integration；真实执行成功/失败路径，不以 source-token presence 代替行为。
 
@@ -158,26 +145,65 @@ git status --short
 
 预期：tests、Skill validation、valid fixture 和 repository self-validation PASS；隔离扫描无匹配；Git 仅含 M03 scope；不产生 remote operation。
 
-## Traceability target
+## Traceability
 
-| Task | Requirements | Implementation | Verification |
+| Task | Requirements | Implementation | Tests |
 |---|---|---|---|
-| M03-T01 | 010, 016 | evidence parser/validator/template | evidence + validation tests |
-| M03-T02 | 010–012, 016 | Git checks/precommit/CLI | temp Git + CLI tests |
-| M03-T03 | 010–012, 016 | Skill policy/scenarios/docs | loaded behavior + full milestone verification |
+| `M03-T01` | `REQ-TS2C-010, REQ-TS2C-016` | `skills/tracing-spec-to-code/scripts/tstc/issues.py, skills/tracing-spec-to-code/scripts/tstc/evidence.py, skills/tracing-spec-to-code/scripts/tstc/validation.py, skills/tracing-spec-to-code/assets/templates/milestone-plan.md` | `tests/test_evidence.py` |
+| `M03-T02` | `REQ-TS2C-010, REQ-TS2C-011, REQ-TS2C-012, REQ-TS2C-016` | `skills/tracing-spec-to-code/scripts/tstc/git_checks.py, skills/tracing-spec-to-code/scripts/tstc/precommit.py, skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py` | `tests/test_git_checks.py, tests/test_cli.py` |
+| `M03-T03` | `REQ-TS2C-010, REQ-TS2C-011, REQ-TS2C-012, REQ-TS2C-016` | `skills/tracing-spec-to-code/references/milestone-commit.md, skills/tracing-spec-to-code/SKILL.md, skills/tracing-spec-to-code/references/task-execution.md, README.md, skills/tracing-spec-to-code/agents/openai.yaml` | `tests/scenarios/m03/scope-pressure.md, tests/scenarios/m03/verification-failure.md, tests/scenarios/m03/git-failure.md` |
 
 ## Evidence and commit
 
-- Gate P: Pending
-- Baseline dirty paths: None — planning started from a clean worktree
+### Task status
+
+| Task | Status | Actual verification |
+|---|---|---|
+| `M03-T01` | `Completed` | `58/58 PASS` |
+| `M03-T02` | `Completed` | `96/96 PASS` |
+| `M03-T03` | `Completed` | `fresh-agents: PASS` |
+
 - Approved proposals: None
 - Deviations: None
-- Task status: M03-T01 Pending; M03-T02 Pending; M03-T03 Pending
-- Actual verification: Pending
+- Baseline dirty paths: None
 
-### Commit scope target
+### Verification
 
-只包含 `Planned files`、本 plan、roadmap，以及执行期间获批并与 M03 相关的 proposal files；最终以实际 evidence table 的精确文件 paths 为准。
+| Scope | Command | Expected | Actual | Result |
+|---|---|---|---|---|
+| Targeted | `python -m unittest tests.test_git_checks tests.test_cli tests.test_evidence tests.test_validation` | All pass | `97/97 PASS` | `PASS` |
+| Broader | `python -m unittest discover -s tests` | All pass | `117/117 PASS` | `PASS` |
+| Skill | `quick_validate.py skills/tracing-spec-to-code` | Valid Skill | `PASS` | `PASS` |
+| Fixture | `tracing_spec_to_code.py validate --repo tests/fixtures/valid-project` | No issues | `PASS` | `PASS` |
+| Repository | `tracing_spec_to_code.py validate --repo . --format json` | Valid JSON | `PASS` | `PASS` |
+| Isolation | `rg -n "VGCCoach2|agentic-workflow" README.md skills/tracing-spec-to-code tests` | No matches | `PASS` | `PASS` |
+| Behavior | `fresh-agent M03 pressure scenarios` | Exact success and safe failures | `3/3 PASS` | `PASS` |
+| Diff | `git diff --check` | No errors | `PASS` | `PASS` |
+
+### Commit scope
+
+| Path | Purpose |
+|---|---|
+| `README.md` | Document M03 usage, codes, and boundaries |
+| `docs/plans/tracing-spec-to-code-m03-evidence-commit.md` | Persist milestone evidence and commit facts |
+| `docs/plans/tracing-spec-to-code-roadmap.md` | Persist approved current milestone state |
+| `skills/tracing-spec-to-code/SKILL.md` | Route milestone delivery to commit policy |
+| `skills/tracing-spec-to-code/agents/openai.yaml` | Update M03 discovery prompt |
+| `skills/tracing-spec-to-code/assets/templates/milestone-plan.md` | Provide canonical evidence tables |
+| `skills/tracing-spec-to-code/references/milestone-commit.md` | Define exact safe commit sequence |
+| `skills/tracing-spec-to-code/references/task-execution.md` | Invoke milestone commit policy |
+| `skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py` | Expose read-only precommit CLI |
+| `skills/tracing-spec-to-code/scripts/tstc/evidence.py` | Parse and validate milestone evidence |
+| `skills/tracing-spec-to-code/scripts/tstc/git_checks.py` | Inspect staged state and commit draft |
+| `skills/tracing-spec-to-code/scripts/tstc/issues.py` | Share stable validation issues |
+| `skills/tracing-spec-to-code/scripts/tstc/precommit.py` | Compose repository/evidence/Git checks |
+| `skills/tracing-spec-to-code/scripts/tstc/validation.py` | Reuse shared issue sorting |
+| `tests/scenarios/m03/git-failure.md` | Pressure-test Git failure behavior |
+| `tests/scenarios/m03/scope-pressure.md` | Pressure-test exact scope behavior |
+| `tests/scenarios/m03/verification-failure.md` | Pressure-test failed verification behavior |
+| `tests/test_cli.py` | Verify precommit CLI exits and schema |
+| `tests/test_evidence.py` | Verify canonical evidence behavior |
+| `tests/test_git_checks.py` | Verify read-only Git boundaries |
 
 ### Commit draft
 
@@ -187,13 +213,3 @@ feat(evidence): enforce safe milestone commits
 Milestone: M03 Evidence and commit
 Requirements: REQ-TS2C-010, REQ-TS2C-011, REQ-TS2C-012, REQ-TS2C-016
 ```
-
-只有 Gate P 明确批准、全部 verification/evidence 完成、无 pending Gate Δ 且 staged scope 准确时才 commit；不自动 push。
-
-## Risks and Gate P
-
-- Markdown evidence parser 只接受批准 section/table contract，不从自由 prose 猜测。
-- File-level scope 无法拆分同一文件内的用户旧改动；baseline overlap 必须 fail closed。
-- Git hooks/signing 由本地环境控制；失败路径是产品行为，不得绕过。
-- 真实 Python 3.10 runtime 若不可用，记录 grammar check 与 runtime gap。
-- Gate P 批准前不实现本 plan。
