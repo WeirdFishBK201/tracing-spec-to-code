@@ -1,12 +1,12 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：In Progress — M03 Evidence and commit
+- 状态：Awaiting Gate P — M04 Client distribution
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
 - Gate P：Approved — M01, M02, and M03 on 2026-07-30
-- Gate Δ：CP-01, CP-02, CP-03, and CP-04 Approved on 2026-07-30
-- Current milestone：M03
-- 当前详细计划：`docs/plans/tracing-spec-to-code-m03-evidence-commit.md`
+- Gate Δ：CP-01 through CP-05 Approved on 2026-07-30
+- Current milestone：M04
+- 当前详细计划：None — awaiting M04 Gate P
 
 ## 规则
 
@@ -25,6 +25,11 @@
 | M03 — Evidence and commit | Skill 能验证 evidence、隔离 stage 范围并安全创建 milestone commit | REQ-TS2C-010–012 | M02 | Temporary Git repo integration tests、failure-path tests |
 | M04 — Client distribution | Canonical skill 可通过 registry installer 分发到 Level 1/2 客户端 | REQ-TS2C-013–014 | M03 | Installer matrix、Level 1 install/discovery、Level 2 smoke tests |
 | M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、clean-clone release verification |
+
+## Long-term goals
+
+- npx 与远程分发：M05 之后再提案立项；从公开 GitHub source 安装，在隔离环境验证固定 CLI 版本、project/user scope、远程与 canonical 内容一致性及 clean-environment 行为。
+- 该目标不属于 M04 Gate P，不授权网络访问、依赖下载、GitHub mutation 或 push。
 
 ## Requirement coverage
 
@@ -49,4 +54,4 @@
 
 ## Gate P
 
-M01 与 M02 已交付。M03 Gate P 已于 2026-07-30 批准；只执行 M03。M04–M05 尚未展开详细 task。
+M01–M03 已交付。M04 尚未创建详细 plan，当前等待 M04 Gate P；M05 和长期目标均不得提前展开详细 task。

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Execute only one task at a time with a fresh bounded context packet and independent spec/quality review at each checkpoint.
 
-- Status: Approved — In Progress
+- Status: Completed
 - Milestone: M03 — Evidence and commit
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`

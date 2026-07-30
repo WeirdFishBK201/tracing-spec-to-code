@@ -493,8 +493,10 @@ tracing-spec-to-code/
 - 新客户端优先通过 registry 增加适配，不修改 workflow core。
 - installer 默认复制完整 skill 目录，不只复制 `SKILL.md`。
 - 安装前验证目标，已有内容不静默覆盖。
+- M04 installer 只依赖 Python 标准库，在本地路径运行；自动化测试把 project root 和 home root 指向临时目录。
+- M04 自动化测试不运行 `npx`、不下载依赖、不访问 GitHub，也不修改真实客户端配置目录。
 
-GitHub Copilot CLI 的推荐 GitHub 安装方式为：
+未来远程分发可评估 GitHub Copilot CLI 的 GitHub 安装方式：
 
 ```text
 gh skill preview OWNER/tracing-spec-to-code tracing-spec-to-code
@@ -502,6 +504,8 @@ gh skill install OWNER/tracing-spec-to-code tracing-spec-to-code --agent github-
 ```
 
 项目级安装使用 `--scope project`；正式发布后推荐用 `--pin <tag>` 固定版本。
+
+`npx` 与 GitHub remote source 的端到端安装属于 M05 之后的长期目标，必须经过新的提案和 Gate P；它不是 M04 的交付门槛。
 
 ## 13. Validator 边界与失败策略
 
@@ -580,6 +584,8 @@ Validator 不检查：
 5. **M05 — Evaluation and release**：完成基线、压力场景、客户端验证与发布准备。
 
 每个 milestone 必须独立可运行、可验证；后续 milestone 的详细 plan 只能在前一 milestone 完成后创建。
+
+M05 之后可另行提案 `npx` 与公开 GitHub source 的远程安装矩阵；在该提案获批前，不为它下载依赖、访问远端或扩展 M04。
 
 ## 16. 设计验收标准
 
