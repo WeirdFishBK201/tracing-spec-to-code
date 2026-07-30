@@ -6,7 +6,7 @@
 - 触发：M04 design clarification
 - Requirements：REQ-TS2C-012, REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
 - 影响 Milestone：M04 — Client distribution
-- 影响 Task：M04 planning
+- 影响 Task：M04-T01, M04-T02, M04-T03
 
 ## Trigger and evidence
 

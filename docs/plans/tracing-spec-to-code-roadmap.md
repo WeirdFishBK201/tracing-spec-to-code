@@ -1,12 +1,12 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：Awaiting Gate P — M04 Client distribution
+- 状态：In Progress — M04 Client distribution
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
-- Gate P：Approved — M01, M02, and M03 on 2026-07-30
+- Gate P：Approved — M01 through M04 on 2026-07-30
 - Gate Δ：CP-01 through CP-05 Approved on 2026-07-30
 - Current milestone：M04
-- 当前详细计划：None — awaiting M04 Gate P
+- 当前详细计划：`docs/plans/tracing-spec-to-code-m04-client-distribution.md`
 
 ## 规则
 
@@ -54,4 +54,4 @@
 
 ## Gate P
 
-M01–M03 已交付。M04 尚未创建详细 plan，当前等待 M04 Gate P；M05 和长期目标均不得提前展开详细 task。
+M01–M03 已交付。M04 Gate P 已于 2026-07-30 批准；只执行 M04。M05 和长期目标均不得提前展开详细 task。
