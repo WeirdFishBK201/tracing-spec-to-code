@@ -1,12 +1,13 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：In Progress — M04 Client distribution
+- 状态：Awaiting Gate P — M05 Evaluation and release
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
-- Gate P：Approved — M01 through M04 on 2026-07-30
+- Gate P：Approved — M01 through M04 on 2026-07-30; M05 awaiting detailed plan
 - Gate Δ：CP-01 through CP-08 Approved on 2026-07-30
-- Current milestone：M04
-- 当前详细计划：`docs/plans/tracing-spec-to-code-m04-client-distribution.md`
+- Current milestone：M05
+- 当前详细计划：Awaiting M05 plan approval
+- M05 design：`docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
 
 ## 规则
 
@@ -23,8 +24,8 @@
 | M01 — Artifact contracts | 一个可运行的零第三方依赖 validator 能解析配置、识别 artifacts，并检查 ID 与结构追溯 | REQ-TS2C-001, REQ-TS2C-002 | Gate S | Unit tests、CLI behavior tests、template validation、skill structure check |
 | M02 — Workflow core | Skill 能执行 Gate S/P/Δ、当前 milestone 限制、受限上下文和自适应测试决策 | REQ-TS2C-003–009 | M01 | Pressure scenarios、workflow fixtures、behavior tests |
 | M03 — Evidence and commit | Skill 能验证 evidence、隔离 stage 范围并安全创建 milestone commit | REQ-TS2C-010–012 | M02 | Temporary Git repo integration tests、failure-path tests |
-| M04 — Client distribution | Canonical skill 可通过 registry installer 分发到 Level 1/2 客户端 | REQ-TS2C-013–014 | M03 | Installer matrix、Level 1 install/discovery、Level 2 smoke tests |
-| M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、clean-clone release verification |
+| M04 — Client distribution | Canonical skill 可通过 registry installer 分发到 Level 1/2 客户端 | REQ-TS2C-013–014 | M03 | 8×2 installer matrix、完整内容/结构校验、Level 1/2 mapping contract |
+| M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、Level 1 discovery、Level 2 smoke、candidate clean-clone release verification |
 
 ## Long-term goals
 
@@ -55,4 +56,4 @@
 
 ## Gate P
 
-M01–M03 已交付。M04 Gate P 已于 2026-07-30 批准并正在执行；M05 和长期目标均不得提前展开详细 task。
+M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 已于 2026-07-30 获得用户批准，当前等待详细 plan 与新的 Gate P；长期目标不得提前展开详细 task。

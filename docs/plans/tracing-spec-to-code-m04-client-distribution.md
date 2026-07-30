@@ -1,6 +1,6 @@
 # tracing-spec-to-code M04 Client Distribution Implementation Plan
 
-- Status: Approved — In Progress
+- Status: Completed
 - Milestone: M04 — Client distribution
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
