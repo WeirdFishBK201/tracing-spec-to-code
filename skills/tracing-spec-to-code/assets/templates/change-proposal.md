@@ -1,6 +1,7 @@
 # CP-01 — <Change title>
 
 - Status: Pending Gate Δ
+- Gate Δ: Pending
 - Date: <YYYY-MM-DD>
 - Requirements: REQ-<FEATURE>-001
 - Affected milestone: M01

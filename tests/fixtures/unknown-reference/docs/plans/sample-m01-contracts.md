@@ -1,6 +1,8 @@
 # Sample M01 Contracts Plan
 
+- Status: Approved — In Progress
 - Milestone: M01 — Contracts
+- Gate P: Approved
 
 ## Tasks
 

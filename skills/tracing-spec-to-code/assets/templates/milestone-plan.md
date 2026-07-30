@@ -1,6 +1,6 @@
 # <Feature> M01 <Milestone name> Plan
 
-- Status: Draft
+- Status: Draft — Awaiting Gate P
 - Milestone: M01 — <Milestone name>
 - Spec: `docs/specs/<feature>-spec.md`
 - Roadmap: `docs/plans/<feature>-roadmap.md`

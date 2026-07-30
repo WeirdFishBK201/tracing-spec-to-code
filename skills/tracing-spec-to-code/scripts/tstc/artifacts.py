@@ -34,6 +34,13 @@ class MilestoneRef:
 
 
 @dataclass(frozen=True)
+class GateRef:
+    name: str
+    status: str
+    line: int
+
+
+@dataclass(frozen=True)
 class ArtifactRef:
     kind: ArtifactKind
     path: Path
@@ -43,6 +50,13 @@ class ArtifactRef:
     occurrences: tuple[IdOccurrence, ...] = ()
     milestone_id: str | None = None
     milestone_refs: tuple[MilestoneRef, ...] = ()
+    status: str | None = None
+    status_line: int = 0
+    status_count: int = 0
+    gate_refs: tuple[GateRef, ...] = ()
+    current_milestone_id: str | None = None
+    current_milestone_line: int = 0
+    current_milestone_count: int = 0
 
 
 class ArtifactParseError(Exception):
@@ -76,6 +90,35 @@ _MILESTONE_RANGE = re.compile(
     r"\bM(\d{2})\s*[-–—]\s*M(\d{2})\b",
     re.IGNORECASE,
 )
+_METADATA_FIELD = re.compile(
+    r"^-\s*(?P<label>Status|状态|Current milestone|当前 milestone|"
+    r"Gate\s+(?P<gate>S|P|Δ))\s*[:：]\s*(?P<value>.*?)\s*$",
+    re.IGNORECASE,
+)
+_CURRENT_MILESTONE_VALUE = re.compile(r"M\d{2}\Z", re.IGNORECASE)
+_STATUS_PREFIXES = (
+    "In Progress",
+    "Completed",
+    "Delivered",
+    "Rejected",
+    "Approved",
+    "Awaiting",
+    "Pending",
+    "Draft",
+)
+
+
+def _normalized_status(value: str) -> str | None:
+    folded = value.strip().casefold()
+    for status in _STATUS_PREFIXES:
+        prefix = status.casefold()
+        if folded == prefix or (
+            folded.startswith(prefix)
+            and len(folded) > len(prefix)
+            and not folded[len(prefix)].isalnum()
+        ):
+            return status
+    return None
 
 
 def _template_pattern(template: str, feature_slug: str) -> re.Pattern[str]:
@@ -134,10 +177,29 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
     occurrences: list[tuple[int, int, IdOccurrence]] = []
     milestone_id: str | None = None
     milestone_refs: list[MilestoneRef] = []
+    status: str | None = None
+    status_line = 0
+    status_count = 0
+    gate_refs: list[GateRef] = []
+    current_milestone_id: str | None = None
+    current_milestone_line = 0
+    current_milestone_count = 0
+    in_top_metadata = True
+    current_level_two_heading = ""
     for line_number, line in enumerate(lines, start=1):
         heading = _HEADING.match(line)
         heading_level = len(heading.group(1)) if heading else 0
         heading_text = heading.group(2) if heading else ""
+        if heading_level >= 2:
+            in_top_metadata = False
+        if heading_level == 1:
+            current_level_two_heading = ""
+        elif heading_level == 2:
+            current_level_two_heading = re.sub(
+                r"^\d+(?:\.\d+)*\.?\s+",
+                "",
+                heading_text,
+            ).casefold()
         if heading:
             headings.append((heading_level, heading_text))
             heading_positions.append((line_number, heading_level))
@@ -154,6 +216,10 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
             is_definition = (
                 heading_level == 3
                 and heading_text.startswith(value)
+                and (
+                    category != "task"
+                    or current_level_two_heading == "tasks"
+                )
                 and (
                     len(heading_text) == len(value)
                     or not heading_text[len(value)].isalnum()
@@ -172,6 +238,32 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
                     ),
                 )
             )
+
+        if in_top_metadata:
+            metadata = _METADATA_FIELD.match(line)
+            if metadata:
+                label = metadata.group("label").casefold()
+                value = metadata.group("value").strip()
+                normalized = _normalized_status(value)
+                if label in {"status", "状态"}:
+                    status_count += 1
+                    if status_count == 1:
+                        status = normalized or value
+                        status_line = line_number
+                elif metadata.group("gate"):
+                    gate_refs.append(
+                        GateRef(
+                            name=metadata.group("gate").upper(),
+                            status=normalized or value,
+                            line=line_number,
+                        )
+                    )
+                else:
+                    current_milestone_count += 1
+                    current_milestone_line = line_number
+                    current_milestone_id = None
+                    if _CURRENT_MILESTONE_VALUE.fullmatch(value):
+                        current_milestone_id = value.upper()
 
         if kind == ArtifactKind.MILESTONE_PLAN and milestone_id is None:
             metadata_match = _MILESTONE_METADATA.match(line)
@@ -284,6 +376,13 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
         occurrences=ordered_occurrences,
         milestone_id=milestone_id,
         milestone_refs=tuple(milestone_refs),
+        status=status,
+        status_line=status_line,
+        status_count=status_count,
+        gate_refs=tuple(gate_refs),
+        current_milestone_id=current_milestone_id,
+        current_milestone_line=current_milestone_line,
+        current_milestone_count=current_milestone_count,
     )
 
 

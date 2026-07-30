@@ -17,6 +17,56 @@ from tstc.artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
 
 
 class DiscoverArtifactsTests(unittest.TestCase):
+    def test_parses_top_workflow_metadata_and_normalizes_statuses(self) -> None:
+        fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir).resolve()
+            shutil.copytree(fixture_root, repo_root, dirs_exist_ok=True)
+            spec_path = repo_root / "docs/specs/sample-spec.md"
+            spec_path.write_text(
+                spec_path.read_text(encoding="utf-8")
+                .replace("- Status: Approved", "- 状态：approved — locked")
+                .replace("- Gate S: Approved", "- Gate S：APPROVED by owner"),
+                encoding="utf-8",
+            )
+            roadmap_path = repo_root / "docs/plans/sample-roadmap.md"
+            roadmap_path.write_text(
+                roadmap_path.read_text(encoding="utf-8")
+                .replace("- Status: Approved", "- Status: in progress")
+                .replace(
+                    "- Current milestone: M01",
+                    "- 当前 milestone：M01",
+                ),
+                encoding="utf-8",
+            )
+
+            artifacts = discover_artifacts(load_config(repo_root))
+
+            by_kind = {artifact.kind: artifact for artifact in artifacts}
+            spec = by_kind[ArtifactKind.SPEC]
+            roadmap = by_kind[ArtifactKind.ROADMAP]
+            self.assertEqual("Approved", getattr(spec, "status", None))
+            self.assertEqual(3, getattr(spec, "status_line", 0))
+            self.assertEqual(
+                [("S", "Approved", 4)],
+                [
+                    (gate.name, gate.status, gate.line)
+                    for gate in getattr(spec, "gate_refs", ())
+                ],
+            )
+            self.assertEqual("In Progress", getattr(roadmap, "status", None))
+            self.assertEqual(
+                "M01",
+                getattr(roadmap, "current_milestone_id", None),
+            )
+            self.assertEqual(
+                [("P", "Approved", 5)],
+                [
+                    (gate.name, gate.status, gate.line)
+                    for gate in getattr(roadmap, "gate_refs", ())
+                ],
+            )
+
     def test_discovers_default_artifacts_and_parses_definitions(self) -> None:
         fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
 
@@ -120,7 +170,7 @@ class DiscoverArtifactsTests(unittest.TestCase):
             plan_path = repo_root / "docs/plans/sample-m01-contracts.md"
             plan_path.write_text(
                 plan_path.read_text(encoding="utf-8").replace(
-                    "- Milestone: M01 — Contracts\n\n",
+                    "- Milestone: M01 — Contracts\n",
                     "",
                 ),
                 encoding="utf-8",

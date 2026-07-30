@@ -1,6 +1,7 @@
 # <Feature> Roadmap
 
 - Status: Draft
+- Current milestone: M01
 - Spec: `docs/specs/<feature>-spec.md`
 - Gate P: Pending
 

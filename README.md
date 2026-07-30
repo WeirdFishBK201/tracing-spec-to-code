@@ -1,6 +1,6 @@
 # tracing-spec-to-code
 
-`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan artifact contracts. M01 validates configured Markdown artifacts, stable Requirement IDs, task IDs, and cross-artifact references using Python's standard library.
+`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan artifact contracts. M02 adds gated milestone workflow rules while retaining M01 validation of configured Markdown artifacts, stable Requirement IDs, task IDs, and cross-artifact references.
 
 ## Requirements
 
@@ -50,6 +50,19 @@ docs/changes/<feature>-cpNN-<proposal-slug>.md
 
 Canonical Markdown templates are under `skills/tracing-spec-to-code/assets/templates/`.
 
+## M02 workflow contract
+
+The validator checks deterministic workflow metadata and blockers:
+
+- Every artifact has exactly one known `Status`.
+- The roadmap has one valid `Current milestone`; Gate S and the roadmap Gate P are `Approved`.
+- When an active milestone plan exists, its Gate P is also `Approved`; without one, only the explicit `Awaiting` handoff to the next incomplete milestone is valid.
+- At most one unfinished milestone plan exists, and it is the roadmap's next incomplete milestone.
+- Every milestone plan defines 2–5 valid task headings under `## Tasks`.
+- A change proposal remains blocking until both its status and Gate Δ are `Approved`.
+
+The Skill policy complements these mechanical checks. It requires explicit Gate S/P/Δ approval, pauses material deviations for impact analysis and a change proposal, loads only a bounded task context, chooses behavioral verification or TDD by risk, rejects invalid RED results, and records evidence in the milestone plan while delivering only a summary by default.
+
 ## Results
 
 | Exit code | Meaning | Streams |
@@ -81,9 +94,21 @@ Stable M01 codes:
 - Requirements: `REQ_ID_INVALID`, `REQ_ID_DUPLICATE`, `REQ_REFERENCE_UNKNOWN`, `REQ_REFERENCE_MISSING`
 - Tasks: `TASK_ID_INVALID`, `TASK_ID_DUPLICATE`
 
-## M01 boundaries
+Stable M02 workflow codes:
 
-The validator checks deterministic paths, filename templates, required Markdown sections, IDs, current-milestone coverage, and references. It does not judge requirement quality, implementation correctness, test adequacy, approve gates, rewrite facts, install dependencies, or perform Git operations.
+- `WORKFLOW_STATUS_INVALID`
+- `CURRENT_MILESTONE_INVALID`
+- `GATE_APPROVAL_MISSING`
+- `PLAN_MULTIPLE_ACTIVE`
+- `PLAN_NOT_NEXT_MILESTONE`
+- `TASK_COUNT_INVALID`
+- `CHANGE_PROPOSAL_PENDING`
+
+## Current boundaries
+
+The validator checks deterministic paths, filename templates, required Markdown sections, IDs, workflow metadata, and references. It reports recorded gate state but does not grant approval, judge requirement quality, implementation correctness, or test adequacy, or rewrite facts.
+
+M02 does not enforce Git or evidence persistence, install the Skill or dependencies, or evaluate release readiness. Those remain outside the implemented milestone.
 
 The repository is independent of other projects and does not read or modify them.
 

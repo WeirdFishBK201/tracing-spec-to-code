@@ -7,12 +7,36 @@ from .artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
 from .config import load_config
 
 
+_KNOWN_STATUSES = {
+    "Draft",
+    "Awaiting",
+    "Pending",
+    "In Progress",
+    "Approved",
+    "Completed",
+    "Delivered",
+    "Rejected",
+}
+_COMPLETED_STATUSES = {"Completed", "Delivered"}
+
+
 @dataclass(frozen=True)
 class ValidationIssue:
     code: str
     path: Path
     line: int
     message: str
+
+
+def _gate_status(artifact: object, name: str) -> tuple[str | None, int]:
+    matches = [
+        gate
+        for gate in artifact.gate_refs
+        if gate.name.casefold() == name.casefold()
+    ]
+    if len(matches) != 1:
+        return None, artifact.status_line or 1
+    return matches[0].status, matches[0].line
 
 
 def validate_repository(
@@ -65,6 +89,205 @@ def validate_repository(
                 issue.code,
             ),
         )
+
+    for artifact in artifacts:
+        if (
+            artifact.status_count != 1
+            or artifact.status not in _KNOWN_STATUSES
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="WORKFLOW_STATUS_INVALID",
+                    path=artifact.path.relative_to(config.repo_root),
+                    line=artifact.status_line,
+                    message="workflow status is missing or invalid",
+                )
+            )
+
+    specs = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.SPEC
+    ]
+    roadmaps = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.ROADMAP
+    ]
+    plans = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.MILESTONE_PLAN
+    ]
+    proposals = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.CHANGE_PROPOSAL
+    ]
+    roadmap = roadmaps[0]
+
+    for artifact in artifacts:
+        if (
+            artifact.kind != ArtifactKind.ROADMAP
+            and artifact.current_milestone_count
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="CURRENT_MILESTONE_INVALID",
+                    path=artifact.path.relative_to(config.repo_root),
+                    line=artifact.current_milestone_line,
+                    message=(
+                        "current milestone metadata is only allowed on roadmap"
+                    ),
+                )
+            )
+
+    milestone_sequence: list[str] = []
+    for milestone_ref in roadmap.milestone_refs:
+        if milestone_ref.milestone_id not in milestone_sequence:
+            milestone_sequence.append(milestone_ref.milestone_id)
+    if (
+        roadmap.current_milestone_count != 1
+        or roadmap.current_milestone_id is None
+        or roadmap.current_milestone_id not in milestone_sequence
+    ):
+        issues.append(
+            ValidationIssue(
+                code="CURRENT_MILESTONE_INVALID",
+                path=roadmap.path.relative_to(config.repo_root),
+                line=roadmap.current_milestone_line or 1,
+                message="roadmap current milestone is missing or invalid",
+            )
+        )
+
+    for artifact, gate_name in ((specs[0], "S"), (roadmap, "P")):
+        gate_status, gate_line = _gate_status(artifact, gate_name)
+        if gate_status != "Approved":
+            issues.append(
+                ValidationIssue(
+                    code="GATE_APPROVAL_MISSING",
+                    path=artifact.path.relative_to(config.repo_root),
+                    line=gate_line,
+                    message=f"Gate {gate_name} is not approved",
+                )
+            )
+
+    active_plans = [
+        plan
+        for plan in plans
+        if plan.status not in _COMPLETED_STATUSES
+    ]
+    if len(active_plans) > 1:
+        for plan in active_plans[1:]:
+            issues.append(
+                ValidationIssue(
+                    code="PLAN_MULTIPLE_ACTIVE",
+                    path=plan.path.relative_to(config.repo_root),
+                    line=plan.status_line,
+                    message="more than one milestone plan is active",
+                )
+            )
+
+    completed_plans = [
+        plan for plan in plans if plan.status in _COMPLETED_STATUSES
+    ]
+    completed_plan_ids = {plan.milestone_id for plan in completed_plans}
+    completed_milestones: set[str] = set()
+    for milestone_id in milestone_sequence:
+        if milestone_id not in completed_plan_ids:
+            break
+        completed_milestones.add(milestone_id)
+    for plan in completed_plans:
+        if plan.milestone_id not in completed_milestones:
+            issues.append(
+                ValidationIssue(
+                    code="PLAN_NOT_NEXT_MILESTONE",
+                    path=plan.path.relative_to(config.repo_root),
+                    line=plan.status_line,
+                    message=(
+                        "completed plan is outside the contiguous roadmap "
+                        "milestone prefix"
+                    ),
+                )
+            )
+    next_milestone = next(
+        (
+            milestone_id
+            for milestone_id in milestone_sequence
+            if milestone_id not in completed_milestones
+        ),
+        None,
+    )
+    if len(active_plans) == 1:
+        active_plan = active_plans[0]
+        if (
+            active_plan.milestone_id != roadmap.current_milestone_id
+            or active_plan.milestone_id != next_milestone
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="PLAN_NOT_NEXT_MILESTONE",
+                    path=active_plan.path.relative_to(config.repo_root),
+                    line=active_plan.status_line,
+                    message=(
+                        "active plan does not match roadmap current and "
+                        "next incomplete milestone"
+                    ),
+                )
+            )
+        gate_status, gate_line = _gate_status(active_plan, "P")
+        if gate_status != "Approved":
+            issues.append(
+                ValidationIssue(
+                    code="GATE_APPROVAL_MISSING",
+                    path=active_plan.path.relative_to(config.repo_root),
+                    line=gate_line,
+                    message="Gate P is not approved",
+                )
+            )
+    elif (
+        not active_plans
+        and next_milestone is not None
+        and not (
+            roadmap.status == "Awaiting"
+            and roadmap.current_milestone_id == next_milestone
+        )
+    ):
+        issues.append(
+            ValidationIssue(
+                code="PLAN_NOT_NEXT_MILESTONE",
+                path=roadmap.path.relative_to(config.repo_root),
+                line=roadmap.status_line,
+                message=f"no active plan for next milestone: {next_milestone}",
+            )
+        )
+
+    for plan in plans:
+        task_count = len(plan.task_ids)
+        if task_count < 2 or task_count > 5:
+            issues.append(
+                ValidationIssue(
+                    code="TASK_COUNT_INVALID",
+                    path=plan.path.relative_to(config.repo_root),
+                    line=plan.status_line or 1,
+                    message=(
+                        "milestone plan must define 2-5 valid tasks; "
+                        f"found {task_count}"
+                    ),
+                )
+            )
+
+    for proposal in proposals:
+        gate_status, gate_line = _gate_status(proposal, "Δ")
+        if proposal.status != "Approved" or gate_status != "Approved":
+            issues.append(
+                ValidationIssue(
+                    code="CHANGE_PROPOSAL_PENDING",
+                    path=proposal.path.relative_to(config.repo_root),
+                    line=gate_line,
+                    message="change proposal status and Gate Δ must be approved",
+                )
+            )
 
     defined_requirements = {
         occurrence.value

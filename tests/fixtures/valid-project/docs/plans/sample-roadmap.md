@@ -1,5 +1,9 @@
 # Sample Roadmap
 
+- Status: Approved
+- Current milestone: M01
+- Gate P: Approved
+
 ## Milestones
 
 | Milestone | Outcome | Requirements | Dependencies | Verification gate |
