@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "clients": [
+    {
+      "id": "codex",
+      "display_name": "Codex",
+      "level": 1,
+      "project_path": ".agents/skills",
+      "user_path": ".agents/skills",
+      "verification": "install-discovery"
+    },
+    {
+      "id": "claude-code",
+      "display_name": "Claude Code",
+      "level": 1,
+      "project_path": ".claude/skills",
+      "user_path": ".claude/skills",
+      "verification": "install-discovery"
+    },
+    {
+      "id": "github-copilot",
+      "display_name": "GitHub Copilot CLI",
+      "level": 1,
+      "project_path": ".github/skills",
+      "user_path": ".copilot/skills",
+      "verification": "install-discovery"
+    },
+    {
+      "id": "antigravity",
+      "display_name": "Antigravity",
+      "level": 1,
+      "project_path": ".agent/skills",
+      "user_path": ".gemini/antigravity/skills",
+      "verification": "install-discovery"
+    },
+    {
+      "id": "gemini-cli",
+      "display_name": "Gemini CLI",
+      "level": 1,
+      "project_path": ".gemini/skills",
+      "user_path": ".gemini/skills",
+      "verification": "install-discovery"
+    },
+    {
+      "id": "cursor",
+      "display_name": "Cursor",
+      "level": 2,
+      "project_path": ".cursor/skills",
+      "user_path": ".cursor/skills",
+      "verification": "structure-smoke"
+    },
+    {
+      "id": "windsurf",
+      "display_name": "Windsurf/Cascade",
+      "level": 2,
+      "project_path": ".windsurf/skills",
+      "user_path": ".codeium/windsurf/skills",
+      "verification": "structure-smoke"
+    },
+    {
+      "id": "cline",
+      "display_name": "Cline",
+      "level": 2,
+      "project_path": ".cline/skills",
+      "user_path": ".cline/skills",
+      "verification": "structure-smoke"
+    }
+  ]
+}

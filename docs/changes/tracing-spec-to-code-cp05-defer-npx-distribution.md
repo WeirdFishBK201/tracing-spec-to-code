@@ -41,3 +41,12 @@ M04 brainstorming 曾考虑把第三方 `npx skills` CLI 作为主要 installer�
 ## Gate Δ
 
 Approved by the user on 2026-07-30.
+
+## Implementation outcome
+
+M04 implementation/verification 按本 proposal 交付：installer 只从
+canonical `skills/tracing-spec-to-code/` 复制到测试提供的显式临时
+root；CP-05 批准后的实现阶段未运行 `npx`、未下载依赖、未访问远端，
+也未启动真实 agent 客户端。8 个客户端的 project/user 共 16 种本地
+布局已通过完整 manifest 一致性验证。M04 全程未发生 GitHub mutation
+或 push；远程与 `npx` 分发仍保留为 M05 之后的长期目标。

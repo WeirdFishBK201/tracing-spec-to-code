@@ -5,9 +5,9 @@
 - Milestone：M04 — Client distribution
 - Requirements：REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
 - Roadmap：`docs/plans/tracing-spec-to-code-roadmap.md`
-- Change proposal：`docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md`
-- Gate Δ：Approved on 2026-07-30
-- Gate P：Pending
+- Change proposals：`docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md`, `docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md`, `docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md`, `docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md`
+- Gate Δ：CP-05, CP-06, CP-07, and CP-08 Approved on 2026-07-30
+- Gate P：Approved on 2026-07-30
 
 ## Goal
 
@@ -21,7 +21,7 @@ M04 包含：
 
 - `skills/tracing-spec-to-code/` 继续作为唯一 canonical source。
 - registry 声明 8 个客户端的稳定 ID、支持级别、project/user 相对路径和能力元数据。
-- Python 标准库 installer 解析 registry、解析安全目标、复制完整目录并验证结果。
+- Python 标准库 installer 解析 registry、解析安全目标、复制完整 distributable tree 并验证结果；runtime-only cache 不进入分发。
 - 临时 project/home roots 下的 8 clients × 2 scopes 安装矩阵。
 - 已有目标保护、无效 registry、路径逃逸、source 异常和部分复制失败处理。
 - README 中的本地安装、边界和验证命令。
@@ -32,6 +32,7 @@ M04 不包含：
 - GitHub remote install、clone、fetch、push、PR、release 或远程一致性检查。
 - 安装或升级 Python、Git、Node 或 agent 客户端。
 - 启动真实 agent，或写入开发机真实 project/home/client 配置。
+- 防护恶意并发 filesystem writer 在 installer 创建 path 后、首次记录 identity 前替换该 path；这需要 platform-specific native handle API。
 - M05 的基线、压力场景、5x wording 和 runtime release evidence。
 
 ## Architecture
@@ -104,11 +105,14 @@ Exit code 与现有 CLI 约定一致：
 3. 拒绝 canonical source 中的 symlink、路径逃逸和非普通文件。
 4. 解析 root 与 registry 相对路径，确认目标仍位于显式 root 内。
 5. 确认最终目标不存在，在同一父目录创建唯一临时目录。
-6. 用 `shutil.copytree` 复制完整 canonical directory。
-7. 重建临时副本 manifest；缺失、额外或 hash 不一致都失败。
-8. 把验证后的临时目录 rename 为最终目标，再验证最终 manifest。
+6. 在 pinned workspace 中 exclusive 创建 staged root，并按 source snapshot 逐项复制完整 distributable tree、记录每项 identity；runtime cache 不在 snapshot 中。
+7. 重建临时副本 manifest/topology；缺失、额外、identity replacement 或 hash 不一致都失败。
+8. 用 exclusive `mkdir` 从不存在状态 claim 最终目标；竞态出现的任何目标都拒绝且不覆盖。
+9. 使用 exclusive create 发布 verified staged directories/files，最后发布 `SKILL.md`，再验证最终 manifest/topology。
 
-失败时只能清理本次创建且已精确解析的临时目录。不得删除或修改已有目标、canonical source、root 其他内容或 Git 状态；无法安全清理时报告准确路径并停止。
+最终目录在发布期间可能短暂可见，因此 M04 保证 verified before success 和 never overwrite，不保证目录直到完成才可见；安装时不得让客户端或其他工具并发扫描并修改相同 root。
+
+M04 threat model 是 cooperative filesystem：安装期间没有其他进程或 agent 主动变更显式 root、parent chain、installer workspace、staging 或 final target。parent chain 逐层 no-follow 创建和校验；installer 在首次记录 ownership identity 后检测 replacement，并且失败时只清理 identity 仍匹配且归本次 installer 所有的 parent/staging/target 内容，外部 replacement 或新增内容不删除。Python 标准库 path-based create 无法原子地同时返回 durable directory identity，因此刚创建 path 在首次 identity capture 前被恶意并发替换不在 M04 保证范围内；覆盖该窗口需要后续 platform-specific native handle design。不得修改安装开始前已有目标、canonical source、root 其他持久内容或 Git 状态；无法安全清理时报告准确路径并停止。
 
 ## Testing
 
@@ -119,7 +123,11 @@ Targeted suite 使用 Python `unittest` 和 `tempfile`，不需要网络：
 - canonical manifest 对缺失、额外、内容变化和 symlink fail closed。
 - 8 clients × project/user 的 16 个安装组合全部复制完整目录。
 - 已有目标包含 sentinel 时安装失败，sentinel 内容保持不变。
-- 模拟复制或验证失败后最终目标不存在，只清理本次临时目录。
+- 模拟复制或验证失败后只清理本次拥有的内容，保留外部替换。
+- partial staging 记录已创建 identity；staged external replacement 不删除。
+- raced parent/empty target、junction/reparse point 和 child collision 均 fail closed，installer-owned parent 按 identity 逆序清理。
+- `SKILL.md` 只在其他 distributable content 已发布后创建。
+- cooperative filesystem boundary 已记录；create-to-first-pin 恶意 replacement 不作为标准库方案的虚假通过条件。
 - CLI 成功输出、未知 client、冲突和 exit `0/1/2`。
 - 测试显式传入临时 project/home roots，并断言真实 home 未被触碰。
 
@@ -139,12 +147,12 @@ Level 1 在 M04 验证完整本地安装结构、metadata 与 registry discovery
 
 - 仓库只有一份 canonical workflow source。
 - registry 精确覆盖批准的 5 个 Level 1 和 3 个 Level 2 客户端。
-- installer 完整复制 canonical directory，复制后 manifest 完全一致。
+- installer 完整复制 canonical distributable tree，复制后 manifest/topology 完全一致，runtime cache 不分发。
 - 16 个隔离安装组合通过，已有目标从不被静默覆盖。
-- 所有失败路径 fail closed，不触碰真实 home、真实客户端、网络或 Git remote。
+- cooperative filesystem threat model 内的失败路径 fail closed，不触碰真实 home、真实客户端、网络或 Git remote。
 - M04 可以只用 Python 标准库、Git 和仓库现有验证命令完成。
 - `npx` 与公开 GitHub source 已记录为 M05 之后的长期目标，不是 M04 completion gate。
 
 ## Approved decision
 
-用户于 2026-07-30 批准本地 Python installer 方案，并要求把 `npx` 测试延后到长期目标。M04 implementation 仍需独立详细 plan 和 Gate P；本设计不授权提前实现。
+用户于 2026-07-30 批准本地 Python installer 方案和 M04 Gate P，并要求把 `npx` 测试延后到长期目标；随后明确批准 CP-06 safe publication semantics、CP-07 ownership-aware staging 与 CP-08 cooperative filesystem threat model。M04 不授权网络、远端 mutation、push、native handle hardening 或提前实现 M05。

@@ -1,11 +1,78 @@
 # tracing-spec-to-code
 
-`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan → Evidence contracts. M03 adds read-only precommit checks and a safe, exact-scope milestone commit policy while retaining M01 artifact validation and M02 gated workflow rules.
+`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan → Evidence contracts. M04 adds verified offline installation into explicit local client roots while retaining the M01 artifact validation, M02 gated workflow, and M03 evidence/commit policy.
 
 ## Requirements
 
 - Python 3.10 or newer
 - No validator runtime packages
+
+## Install into a local client
+
+Run the installer from a local clone of this repository. Project scope requires
+the project root explicitly:
+
+```text
+python tools/install.py --client codex --scope project --project-root <project-directory>
+```
+
+User scope requires the intended home root explicitly:
+
+```text
+python tools/install.py --client codex --scope user --home-root <home-directory>
+```
+
+The installer never infers a home directory, contacts the network, installs
+dependencies, or writes to a real client root unless that root is supplied.
+It copies the complete distributable tree from
+`skills/tracing-spec-to-code/`, excluding runtime-only `__pycache__`, `.pyc`,
+and `.pyo` entries. It verifies a deterministic SHA-256 manifest and refuses
+to replace an existing `tracing-spec-to-code/` target. Remove or relocate an
+existing target yourself only after confirming that is intended; there is no
+`--force` option.
+
+For cross-platform no-overwrite safety, the installer claims an absent target
+before publishing verified staged content. The directory can therefore be
+briefly visible before success; `SKILL.md` is published last. Do not run client
+discovery, another installer, a cleanup tool, or a file-sync task that modifies
+the same explicit root concurrently with installation.
+
+M04 assumes a cooperative filesystem: no other process or agent deliberately
+replaces installer-created paths while installation is running. The installer
+detects identity changes after it first records ownership and preserves
+non-owned replacements, but Python's cross-platform standard-library path APIs
+cannot close the interval between creating a path and first recording its
+identity. Protection against a malicious concurrent filesystem writer requires
+native handle-relative APIs and is deferred to a separate security-hardening
+proposal.
+
+Supported client IDs and local layouts:
+
+| Client ID | Level | Project layout | User layout | M04 evidence |
+|---|---:|---|---|---|
+| `codex` | 1 | `.agents/skills` | `.agents/skills` | Install/discovery-ready layout |
+| `claude-code` | 1 | `.claude/skills` | `.claude/skills` | Install/discovery-ready layout |
+| `github-copilot` | 1 | `.github/skills` | `.copilot/skills` | Install/discovery-ready layout |
+| `antigravity` | 1 | `.agent/skills` | `.gemini/antigravity/skills` | Install/discovery-ready layout |
+| `gemini-cli` | 1 | `.gemini/skills` | `.gemini/skills` | Install/discovery-ready layout |
+| `cursor` | 2 | `.cursor/skills` | `.cursor/skills` | Structure smoke-tested |
+| `windsurf` | 2 | `.windsurf/skills` | `.codeium/windsurf/skills` | Structure smoke-tested |
+| `cline` | 2 | `.cline/skills` | `.cline/skills` | Structure smoke-tested |
+
+The final directory is always `<layout>/tracing-spec-to-code/`. Level 1 and
+Level 2 describe the M04 compatibility evidence, not a promise that every
+client has completed live runtime discovery; live evaluation belongs to M05.
+
+Installer exit codes:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | The complete copy was verified |
+| `1` | A stable policy error occurred, such as an invalid target or collision |
+| `2` | Arguments were invalid or an unexpected runtime error occurred |
+
+`npx` and GitHub-source installation are intentionally deferred to a separate
+post-M05 long-term goal. M04 performs local, offline installation only.
 
 ## Run the validator
 
@@ -130,13 +197,15 @@ The validator checks deterministic paths, filename templates, required Markdown 
 
 The Skill refuses broad staging, failed verification, baseline overlap, Git bypasses, automatic cleanup, and remote operations. A successful local milestone commit does not authorize push, PR, merge, fetch, pull, or remote mutation.
 
-M03 does not install the Skill or dependencies or evaluate release readiness. Those remain outside the implemented milestone.
+M04 installs the Skill from a local clone without installing dependencies.
+Runtime client evaluation and release readiness remain M05 work.
 
 The repository is independent of other projects and does not read or modify them.
 
 ## Development verification
 
 ```text
+python -m unittest tests.test_distribution tests.test_install_cli -v
 python -m unittest discover -s tests -v
 python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py validate --repo tests/fixtures/valid-project
 python C:\Users\Yuchen\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills/tracing-spec-to-code

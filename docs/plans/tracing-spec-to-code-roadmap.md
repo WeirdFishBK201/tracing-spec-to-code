@@ -4,7 +4,7 @@
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
 - Gate P：Approved — M01 through M04 on 2026-07-30
-- Gate Δ：CP-01 through CP-05 Approved on 2026-07-30
+- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30
 - Current milestone：M04
 - 当前详细计划：`docs/plans/tracing-spec-to-code-m04-client-distribution.md`
 
@@ -30,6 +30,7 @@
 
 - npx 与远程分发：M05 之后再提案立项；从公开 GitHub source 安装，在隔离环境验证固定 CLI 版本、project/user scope、远程与 canonical 内容一致性及 clean-environment 行为。
 - 该目标不属于 M04 Gate P，不授权网络访问、依赖下载、GitHub mutation 或 push。
+- Native handle 安全强化：另行提案评估 Windows/POSIX handle-relative API，覆盖 path creation 到首次 identity capture 的恶意并发 replacement；不属于 M04。
 
 ## Requirement coverage
 
@@ -54,4 +55,4 @@
 
 ## Gate P
 
-M01–M03 已交付。M04 Gate P 已于 2026-07-30 批准；只执行 M04。M05 和长期目标均不得提前展开详细 task。
+M01–M03 已交付。M04 Gate P 已于 2026-07-30 批准并正在执行；M05 和长期目标均不得提前展开详细 task。

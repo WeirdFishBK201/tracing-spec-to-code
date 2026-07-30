@@ -1,13 +1,11 @@
 # tracing-spec-to-code M04 Client Distribution Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 - Status: Approved — In Progress
 - Milestone: M04 — Client distribution
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
 - Design: `docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md`
-- Change proposal: `docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md`
+- Change proposals: `docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md`, `docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md`, `docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md`, `docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md`
 - Requirements: REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
 - Gate P: Approved on 2026-07-30
 
@@ -23,6 +21,7 @@
 - Runtime code uses only Python 3.10+ standard library and Git already required by the project.
 - M04 must not run `npx`, download dependencies, access GitHub, start agents, push, or write tests into real project/home/client roots.
 - Existing targets are never overwritten; there is no `--force`.
+- M04 assumes a cooperative filesystem; malicious concurrent replacement before a newly created path's first identity capture requires future native handle-relative hardening.
 - Registry paths use portable forward-slash relative syntax and must remain within the explicit project/home root.
 - Implement only M04; M05 evaluation and the long-term remote distribution goal remain out of scope.
 - Use TDD for behavioral code, bounded worker packets for each task, then independent spec and code-quality reviews.
@@ -38,7 +37,7 @@
 - Create `tests/test_distribution.py`: registry, manifest, path, matrix, collision, and rollback tests.
 - Create `tests/test_install_cli.py`: subprocess CLI contract tests.
 - Modify `README.md`: local install usage, client levels, safety boundaries, and verification.
-- Modify this plan and the roadmap only for actual task evidence, Gate state, and milestone handoff.
+- Modify the design, CP-05/CP-06/CP-07/CP-08, this plan, and the roadmap only for delivery evidence, exact scope, and Gate state.
 
 ## Interfaces and compatibility matrix
 
@@ -87,10 +86,10 @@ Stable policy error codes: `REGISTRY_INVALID`, `SOURCE_INVALID`, `TARGET_INVALID
 
 **Produces:** `ClientSpec`, `ManifestEntry`, `DistributionError`, `load_registry`, `build_manifest`, and `resolve_install_target` with the exact signatures and codes above.
 
-- [ ] Write focused unittest cases for exact IDs/levels/paths, unknown or missing keys, duplicate IDs, invalid verification values, backslashes, drive/absolute paths, `.`, `..`, root escape, stable manifest ordering, changed content, non-regular files, and symlinks.
-- [ ] Run `python -m unittest tests.test_distribution.RegistryTests tests.test_distribution.ManifestTests tests.test_distribution.TargetResolutionTests -v`; confirm RED is caused by missing distribution interfaces, not a test/import typo.
-- [ ] Implement the minimal immutable data types and functions; parse JSON fail closed, convert portable path components only after validation, reject symlinks/non-files, and hash regular files with SHA-256.
-- [ ] Re-run the targeted command; expect all T01 tests PASS, then request an independent spec review of REQ-TS2C-013/014 coverage before T02.
+- [x] Write focused unittest cases for exact IDs/levels/paths, unknown or missing keys, duplicate IDs, invalid verification values, backslashes, drive/absolute paths, `.`, `..`, root escape, stable manifest ordering, changed content, non-regular files, and symlinks.
+- [x] Run `python -m unittest tests.test_distribution.RegistryTests tests.test_distribution.ManifestTests tests.test_distribution.TargetResolutionTests -v`; confirm RED is caused by missing distribution interfaces, not a test/import typo.
+- [x] Implement the minimal immutable data types and functions; parse JSON fail closed, convert portable path components only after validation, reject symlinks/non-files, and hash regular files with SHA-256.
+- [x] Re-run the targeted command; expect all T01 tests PASS, then request an independent spec review of REQ-TS2C-013/014 coverage before T02.
 
 ### M04-T02 — Transactional copy and local CLI
 
@@ -104,10 +103,10 @@ Stable policy error codes: `REGISTRY_INVALID`, `SOURCE_INVALID`, `TARGET_INVALID
 
 **Produces:** `InstallResult`, `install_skill`, and CLI commands `--client <id> --scope project --project-root <path>` or `--scope user --home-root <path>`.
 
-- [ ] Write unittest cases for all 8 clients × 2 scopes, full manifest equality, existing target/sentinel preservation, source mutation, copy failure, verification failure, temporary-directory cleanup, unknown client, mutually exclusive roots, success output, and exit `0/1/2`.
-- [ ] Run `python -m unittest tests.test_distribution.InstallationTests tests.test_install_cli -v`; confirm RED reaches missing install/CLI behavior.
-- [ ] Implement copy-to-unique-sibling-temp, pre/post-copy manifest comparison, rename to an absent final target, precise cleanup of only the created temp directory, and a thin argparse CLI with no home inference.
-- [ ] Re-run the T02 command and then `python -m unittest tests.test_distribution tests.test_install_cli -v`; expect the 16-combination matrix and every failure-path assertion PASS, followed by independent spec and code-quality reviews.
+- [x] Write unittest cases for all 8 clients × 2 scopes, full manifest equality, existing target/sentinel preservation, source mutation, copy failure, verification failure, temporary-directory cleanup, unknown client, mutually exclusive roots, success output, and exit `0/1/2`.
+- [x] Run `python -m unittest tests.test_distribution.InstallationTests tests.test_install_cli -v`; confirm RED reaches missing install/CLI behavior.
+- [x] Implement a unique sibling staging tree, pre/post-copy manifest comparison, exclusive absent-target claim, no-overwrite child publication, ownership-safe cleanup, and a thin argparse CLI with no home inference.
+- [x] Re-run the T02 command and then `python -m unittest tests.test_distribution tests.test_install_cli -v`; expect the 16-combination matrix and every failure-path assertion PASS, followed by independent spec and code-quality reviews.
 
 ### M04-T03 — Documentation, repository evidence, and milestone commit
 
@@ -115,17 +114,17 @@ Stable policy error codes: `REGISTRY_INVALID`, `SOURCE_INVALID`, `TARGET_INVALID
 
 **Requirements:** REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016.
 
-**Files:** Modify `README.md`, this plan, and `docs/plans/tracing-spec-to-code-roadmap.md`; include only T01/T02 implementation and tests in the final commit scope.
+**Files:** Modify `README.md`, the M04 design, CP-05/CP-06/CP-07/CP-08, this plan, and the roadmap; include exact implementation, tests, and governance evidence in final scope.
 
-**Consumes:** Approved M04 design, CP-05, completed T01/T02 interfaces and review findings.
+**Consumes:** Approved M04 design, CP-05/CP-06/CP-07/CP-08, completed T01/T02 interfaces and review findings.
 
-**Produces:** Documented local commands, completed evidence tables, M05 awaiting handoff, and one verified M04 commit with no remote operation.
+**Produces:** Documented local commands, completed evidence tables, M05 awaiting handoff, and one verified M04 commit with no remote mutation.
 
-- [ ] Document requirements, both CLI forms, the eight-client support levels, explicit-root behavior, collision refusal, exit codes, offline boundary, test commands, and that `npx`/GitHub remote validation is a post-M05 long-term goal.
-- [ ] Run the targeted suite and full suite, valid fixture validation, repository self-validation, Skill structure validation, isolation scan, `git diff --check`, and `git status --short`; if `quick_validate.py` still lacks PyYAML, do not install it—report the blocker and obtain explicit dependency approval or an approved existing environment before completion.
-- [ ] Dispatch separate read-only spec and code-quality reviews over the complete M04 diff; fix all blocking findings and rerun affected plus full verification.
-- [ ] Record actual RED/GREEN, matrix counts, reviews, deviations, CP-05, baseline dirty paths, command results, commit scope, and commit draft in this plan; mark roadmap M04 delivered and awaiting M05 only after evidence is complete.
-- [ ] Report the exact stage/commit scope, run read-only precommit, stage only literal approved paths, create the single M04 commit with required milestone/requirements trailers, verify HEAD and clean status, and stop without push.
+- [x] Document requirements, both CLI forms, the eight-client support levels, explicit-root behavior, collision refusal, exit codes, offline boundary, test commands, and that `npx`/GitHub remote validation is a post-M05 long-term goal.
+- [x] Run the targeted suite and full suite, valid fixture validation, repository self-validation, Skill structure validation, isolation scan, `git diff --check`, and `git status --short`; use the approved existing `.venv`, which contains PyYAML, without installing dependencies.
+- [x] Dispatch separate read-only spec and code-quality reviews over the complete M04 diff; fix all blocking findings and rerun affected plus full verification.
+- [x] Record actual RED/GREEN, matrix counts, reviews, deviations, CP-05, baseline dirty paths, command results, commit scope, and commit draft in this plan; mark roadmap M04 delivered and awaiting M05 only after evidence is complete.
+- [x] Prepare the exact stage/commit scope, read-only precommit command, required trailers, and post-commit HEAD/status checks; the approved commit sequence runs only after this evidence is staged.
 
 ## Milestone verification
 
@@ -140,12 +139,81 @@ git diff --check
 git status --short
 ```
 
-Expected observable result: all local tests and validators pass; the 16 install combinations produce manifests identical to canonical; collision/failure tests preserve sentinels and unrelated files; isolation scan has no matches; Git scope contains only approved M04 paths; no network, real client directory, or remote mutation occurs.
+Expected observable result: all local tests and validators pass; 16 install combinations match canonical; failure tests preserve unrelated content; isolation scan is empty; post-CP-05 implementation uses no network or real client directory and performs no remote mutation.
 
 ## Risks and Gate P decisions
 
 - Client path mappings are structural M04 contracts; live discovery remains M05 evidence.
 - Windows path validation must reject both POSIX and drive/backslash escape forms before joining.
-- Directory rename is only atomic within one filesystem, so the temp directory must be a sibling of the final target.
-- Missing `PyYAML` currently blocks the optional external Skill structure script in the active Python environment; M04 may not install it without explicit approval and may not claim completion while a required gate is unresolved.
+- Staging is a target sibling; publication exclusively claims an absent target and refuses raced entries rather than using overwrite-capable directory rename.
+- Python path-based creation has a create-to-first-pin identity window. M04 supports a cooperative filesystem and preserves identity-mismatched replacements only after ownership was first recorded; native handle-relative hardening is a future proposal.
+- The repository `.venv` provides PyYAML, so Skill structure validation runs without dependency installation.
 - Gate P approval authorizes only M04-T01 through M04-T03 and the listed files; it does not authorize `npx`, network, dependency installation, GitHub access, or push.
+
+## Traceability
+
+| Task | Requirements | Implementation | Tests |
+|---|---|---|---|
+| `M04-T01` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `.gitignore, tools/__init__.py, tools/clients.json, tools/distribution.py` | `tests/test_distribution.py` |
+| `M04-T02` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `tools/distribution.py, tools/install.py` | `tests/test_distribution.py, tests/test_install_cli.py` |
+| `M04-T03` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `README.md, docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md, docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md, docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md, docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md, docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md, docs/plans/tracing-spec-to-code-m04-client-distribution.md, docs/plans/tracing-spec-to-code-roadmap.md` | `tests/test_distribution.py, tests/test_install_cli.py` |
+
+## Evidence and commit
+
+### Task status
+
+| Task | Status | Actual verification |
+|---|---|---|
+| `M04-T01` | `Completed` | `registry-path-manifest: PASS` |
+| `M04-T02` | `Completed` | `36/36 PASS` |
+| `M04-T03` | `Completed` | `milestone-gates: PASS` |
+
+- Approved proposals: CP-05, CP-06, CP-07, CP-08
+- Deviations: CP-06 approves exclusive absent-target claim, no-overwrite child publication, brief pre-success target visibility, and `SKILL.md`-last mitigation instead of overwrite-capable directory rename. CP-07 aligns staging with the same identity-recording exclusive ownership model. CP-08 documents the standard-library create-to-first-pin limit and narrows M04 to a cooperative filesystem; native handle-relative protection is future work. CP-05/CP-06/CP-07/CP-08 join the scope because M03 precommit requires proposals affecting current tasks to be staged.
+- Baseline dirty paths: None
+
+### Verification
+
+| Scope | Command | Expected | Actual | Result |
+|---|---|---|---|---|
+| Targeted | `python -m unittest tests.test_distribution tests.test_install_cli -v` | All pass | `59/59 PASS` | `PASS` |
+| Broader | `python -m unittest discover -s tests -v` | All pass | `176/176 PASS` | `PASS` |
+| Skill | `quick_validate.py skills/tracing-spec-to-code` | Valid Skill | `PASS` | `PASS` |
+| Fixture | `tracing_spec_to_code.py validate --repo tests/fixtures/valid-project` | No issues | `PASS` | `PASS` |
+| Repository | `tracing_spec_to_code.py validate --repo . --format json` | Valid JSON | `PASS` | `PASS` |
+| Isolation | `rg -n "VGCCoach2\|agentic-workflow" README.md skills/tracing-spec-to-code tools tests` | No matches | `PASS` | `PASS` |
+| Matrix | `InstallationTests.test_all_client_scope_combinations_install_complete_verified_copy` | 8 clients × 2 scopes | `16/16 PASS` | `PASS` |
+| Reviews | `independent M04 spec and code-quality reviews` | No blockers | `PASS` | `PASS` |
+| Diff | `git diff --check` | No errors | `PASS` | `PASS` |
+
+The four skips are Windows limitations: no FIFO, no file/directory symlink privilege, and a dependent target-symlink case. Junction tests pass. After CP-05, implementation/verification used no network, dependency install, or real client root; M04 performed no GitHub mutation or push.
+
+### Commit scope
+
+| Path | Purpose |
+|---|---|
+| `.gitignore` | Exclude Python runtime caches from repository state |
+| `README.md` | Document offline local installation and boundaries |
+| `docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md` | Record the approved scope delta and implementation outcome |
+| `docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md` | Approve and record safe publication semantics |
+| `docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md` | Approve and record ownership-aware staging |
+| `docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md` | Record the approved cooperative filesystem boundary |
+| `docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md` | Align authoritative publication and threat-model design with CP-06/CP-08 |
+| `docs/plans/tracing-spec-to-code-m04-client-distribution.md` | Persist M04 execution evidence and commit facts |
+| `docs/plans/tracing-spec-to-code-roadmap.md` | Preserve M04 as current through its implementation commit |
+| `tests/test_distribution.py` | Verify registry, paths, manifests, matrix, races, and cleanup |
+| `tests/test_install_cli.py` | Verify explicit roots, output, preservation, and exit codes |
+| `tools/__init__.py` | Define the importable distribution package |
+| `tools/clients.json` | Define the approved eight-client compatibility matrix |
+| `tools/distribution.py` | Implement safe manifest and local-copy policy |
+| `tools/install.py` | Expose the offline local installer CLI |
+
+### Commit draft
+
+```text
+feat(distribution): add safe local skill installer
+
+Milestone: M04 Client distribution
+Requirements: REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
+Change-Proposals: CP-05, CP-06, CP-07, CP-08
+```
