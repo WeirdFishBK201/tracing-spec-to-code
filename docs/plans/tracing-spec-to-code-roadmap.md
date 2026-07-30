@@ -3,10 +3,10 @@
 - 状态：Awaiting Gate P — M03
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
-- Gate P：Approved — M01 on 2026-07-30；M02 on 2026-07-30
+- Gate P：Pending — M03；Approved — M01 on 2026-07-30；M02 on 2026-07-30
 - Gate Δ：CP-01, CP-02, CP-03, and CP-04 Approved on 2026-07-30
 - Current milestone：M03
-- 当前详细计划：None — awaiting M03 Gate P
+- 当前详细计划：`docs/plans/tracing-spec-to-code-m03-evidence-commit.md`
 
 ## 规则
 
@@ -49,4 +49,4 @@
 
 ## Gate P
 
-M01 与 M02 已交付。M03 等待详细 plan 与新的 Gate P；M03–M05 尚未展开详细 task。
+M01 与 M02 已交付。M03 详细 plan 已起草，等待新的 Gate P；M04–M05 尚未展开详细 task。

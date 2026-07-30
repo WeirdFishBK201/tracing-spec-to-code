@@ -1,6 +1,6 @@
 # M03 Evidence and Commit Design
 
-- Status: Draft — verbally approved; awaiting written review
+- Status: Approved — reviewed on 2026-07-30
 - Date: 2026-07-30
 - Milestone: M03 — Evidence and commit
 - Requirements: REQ-TS2C-010, REQ-TS2C-011, REQ-TS2C-012, REQ-TS2C-016
