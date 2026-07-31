@@ -3,13 +3,13 @@
 - Status: Draft
 - Current milestone: M01
 - Spec: `docs/specs/<feature>-spec.md`
-- Gate P: Pending
+- Implementation approval: Pending
 
 ## Milestones
 
 | Milestone | Outcome | Requirements | Dependencies | Verification gate |
 |---|---|---|---|---|
-| M01 — <Name> | <Independent observable outcome> | REQ-<FEATURE>-001 | Gate S | <Broader verification> |
+| M01 — <Name> | <Independent observable outcome> | REQ-<FEATURE>-001 | Requirements confirmation | <Broader verification> |
 
 ## Requirement coverage
 

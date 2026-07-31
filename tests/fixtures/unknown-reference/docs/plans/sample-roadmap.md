@@ -2,7 +2,7 @@
 
 - Status: Approved
 - Current milestone: M01
-- Gate P: Approved
+- Implementation approval: Approved
 
 ## Milestones
 

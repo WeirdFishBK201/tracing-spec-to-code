@@ -1,6 +1,6 @@
 # Sample Specification
 - Status: Approved
-- Gate S: Approved
+- Requirements confirmation: Approved
 ## Requirements
 ### REQ-SAMPLE-001 — First definition
 

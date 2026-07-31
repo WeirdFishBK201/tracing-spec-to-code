@@ -1,6 +1,6 @@
 # Task execution policy
 
-Use this policy after Gate P approves the current milestone plan. Execute only
+Use this policy after Implementation approval approves the current milestone plan. Execute only
 the current task and stop when its outcome is independently verifiable.
 
 ## Build a bounded context packet
@@ -65,7 +65,7 @@ TDD RED.
 1. Confirm the task scope, working tree, dependencies, network and permission
    needs before changing files.
 2. Make only in-scope changes. If reality requires a material change, follow
-   Gate Δ; record non-material deviations.
+   Change approval; record non-material deviations.
 3. Run targeted verification and capture the actual result.
 4. Keep the repository runnable. Use a spec-compliance checkpoint before the
    next task and broader verification before milestone completion.

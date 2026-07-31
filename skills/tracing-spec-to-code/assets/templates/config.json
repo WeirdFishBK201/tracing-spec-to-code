@@ -6,5 +6,5 @@
   "spec_filename_template": "{feature}-spec.md",
   "roadmap_filename_template": "{feature}-roadmap.md",
   "milestone_plan_filename_template": "{feature}-m{milestone}-{milestone_slug}.md",
-  "change_proposal_filename_template": "{feature}-cp{proposal}-{proposal_slug}.md"
+  "change_request_filename_template": "{feature}-cr{change_request}-{change_request_slug}.md"
 }

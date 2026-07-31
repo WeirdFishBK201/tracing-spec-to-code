@@ -13,7 +13,7 @@ class ArtifactKind(str, Enum):
     SPEC = "spec"
     ROADMAP = "roadmap"
     MILESTONE_PLAN = "milestone_plan"
-    CHANGE_PROPOSAL = "change_proposal"
+    CHANGE_REQUEST = "change_request"
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class MilestoneRef:
 
 
 @dataclass(frozen=True)
-class GateRef:
+class ApprovalRef:
     name: str
     status: str
     line: int
@@ -53,7 +53,7 @@ class ArtifactRef:
     status: str | None = None
     status_line: int = 0
     status_count: int = 0
-    gate_refs: tuple[GateRef, ...] = ()
+    approval_refs: tuple[ApprovalRef, ...] = ()
     current_milestone_id: str | None = None
     current_milestone_line: int = 0
     current_milestone_count: int = 0
@@ -81,6 +81,11 @@ _REQUIREMENT_VALID = re.compile(
 _TASK_CANDIDATE = re.compile(r"\bM\d+-T\d+\b")
 _TASK_VALID = re.compile(r"M\d{2}-T\d{2}\Z")
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+_CHANGE_REQUEST_ID = re.compile(r"^CR-(\d{2})\b", re.IGNORECASE)
+_LEGACY_CHANGE_REQUEST_FILENAME = re.compile(
+    r"(?:^|-)cp\d{2}(?:-|\.md$)",
+    re.IGNORECASE,
+)
 _MILESTONE_METADATA = re.compile(
     r"^-\s*Milestone\s*[:：]\s*(M\d{2})\b",
     re.IGNORECASE,
@@ -91,9 +96,9 @@ _MILESTONE_RANGE = re.compile(
     re.IGNORECASE,
 )
 _METADATA_FIELD = re.compile(
-    r"^-\s*(?P<label>Status|状态|Current milestone|当前 milestone|"
-    r"Gate\s+(?P<gate>S|P|Δ))\s*[:：]\s*(?P<value>.*?)\s*$",
-    re.IGNORECASE,
+    r"^-\s*(?P<label>Status|Current milestone|"
+    r"Requirements confirmation|Implementation approval|Change approval)"
+    r"\s*[:：]\s*(?P<value>.*?)\s*$",
 )
 _CURRENT_MILESTONE_VALUE = re.compile(r"M\d{2}\Z", re.IGNORECASE)
 _STATUS_PREFIXES = (
@@ -129,9 +134,9 @@ def _template_pattern(template: str, feature_slug: str) -> re.Pattern[str]:
             continue
         if field_name == "feature":
             parts.append(re.escape(feature_slug))
-        elif field_name in {"milestone", "proposal"}:
+        elif field_name in {"milestone", "change_request"}:
             parts.append(r"\d{2}")
-        elif field_name in {"milestone_slug", "proposal_slug"}:
+        elif field_name in {"milestone_slug", "change_request_slug"}:
             parts.append(r"[A-Za-z0-9][A-Za-z0-9-]*")
     return re.compile(rf"\A{''.join(parts)}\Z")
 
@@ -180,7 +185,7 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
     status: str | None = None
     status_line = 0
     status_count = 0
-    gate_refs: list[GateRef] = []
+    approval_refs: list[ApprovalRef] = []
     current_milestone_id: str | None = None
     current_milestone_line = 0
     current_milestone_count = 0
@@ -242,18 +247,22 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
         if in_top_metadata:
             metadata = _METADATA_FIELD.match(line)
             if metadata:
-                label = metadata.group("label").casefold()
+                label = metadata.group("label")
                 value = metadata.group("value").strip()
                 normalized = _normalized_status(value)
-                if label in {"status", "状态"}:
+                if label == "Status":
                     status_count += 1
                     if status_count == 1:
                         status = normalized or value
                         status_line = line_number
-                elif metadata.group("gate"):
-                    gate_refs.append(
-                        GateRef(
-                            name=metadata.group("gate").upper(),
+                elif label in {
+                    "Requirements confirmation",
+                    "Implementation approval",
+                    "Change approval",
+                }:
+                    approval_refs.append(
+                        ApprovalRef(
+                            name=label,
                             status=normalized or value,
                             line=line_number,
                         )
@@ -299,7 +308,7 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
         ArtifactKind.SPEC: ("Requirements",),
         ArtifactKind.ROADMAP: ("Milestones",),
         ArtifactKind.MILESTONE_PLAN: ("Tasks",),
-        ArtifactKind.CHANGE_PROPOSAL: ("Proposed delta", "Impact"),
+        ArtifactKind.CHANGE_REQUEST: ("Proposed change", "Impact"),
     }
     missing = [
         section
@@ -313,6 +322,34 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
             1,
             f"missing required section: {missing[0]}",
         )
+    if kind == ArtifactKind.CHANGE_REQUEST:
+        heading_match = (
+            _CHANGE_REQUEST_ID.match(headings[0][1])
+            if headings and heading_positions and heading_positions[0][1] == 1
+            else None
+        )
+        if heading_match is None:
+            raise ArtifactParseError(
+                "CHANGE_REQUEST_ID_MISSING",
+                path,
+                heading_positions[0][0] if heading_positions else 1,
+                "Change Request heading must begin with CR-NN",
+            )
+        filename_match = re.search(
+            r"(?:^|-)cr(\d{2})(?:-|\.md$)",
+            path.name,
+            re.IGNORECASE,
+        )
+        if (
+            filename_match is not None
+            and filename_match.group(1) != heading_match.group(1)
+        ):
+            raise ArtifactParseError(
+                "CHANGE_REQUEST_ID_MISMATCH",
+                path,
+                heading_positions[0][0],
+                "Change Request heading ID does not match filename ID",
+            )
     if kind == ArtifactKind.MILESTONE_PLAN and milestone_id is None:
         raise ArtifactParseError(
             "ARTIFACT_PARSE_ERROR",
@@ -379,7 +416,7 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
         status=status,
         status_line=status_line,
         status_count=status_count,
-        gate_refs=tuple(gate_refs),
+        approval_refs=tuple(approval_refs),
         current_milestone_id=current_milestone_id,
         current_milestone_line=current_milestone_line,
         current_milestone_count=current_milestone_count,
@@ -411,15 +448,22 @@ def discover_artifacts(config: ResolvedConfig) -> list[ArtifactRef]:
             if path.is_file() and plan_pattern.fullmatch(path.name)
         )
 
-    proposal_pattern = _template_pattern(
-        config.change_proposal_filename_template,
+    change_request_pattern = _template_pattern(
+        config.change_request_filename_template,
         config.feature_slug,
     )
     if config.change_dir.is_dir():
-        candidates.extend(
-            (ArtifactKind.CHANGE_PROPOSAL, path)
-            for path in sorted(config.change_dir.iterdir())
-            if path.is_file() and proposal_pattern.fullmatch(path.name)
-        )
+        for path in sorted(config.change_dir.iterdir()):
+            if not path.is_file():
+                continue
+            if _LEGACY_CHANGE_REQUEST_FILENAME.search(path.name):
+                raise ArtifactParseError(
+                    "LEGACY_CHANGE_REQUEST_FILENAME",
+                    path,
+                    1,
+                    "legacy Change Request filename uses superseded cpNN contract",
+                )
+            if change_request_pattern.fullmatch(path.name):
+                candidates.append((ArtifactKind.CHANGE_REQUEST, path))
 
     return [_parse_artifact(kind, path) for kind, path in candidates]

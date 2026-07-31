@@ -117,8 +117,8 @@ class ValidateRepositoryTests(unittest.TestCase):
             spec_path = repo_root / "docs/specs/sample-spec.md"
             spec_path.write_text(
                 spec_path.read_text(encoding="utf-8").replace(
-                    "- Gate S: Approved",
-                    "- Gate S: Approved\n- Current milestone: M01",
+                    "- Requirements confirmation: Approved",
+                    "- Requirements confirmation: Approved\n- Current milestone: M01",
                 ),
                 encoding="utf-8",
             )
@@ -164,24 +164,24 @@ class ValidateRepositoryTests(unittest.TestCase):
                         current[0].path,
                     )
 
-    def test_spec_roadmap_and_active_plan_require_approved_gates(self) -> None:
+    def test_spec_roadmap_and_active_plan_require_canonical_approvals(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = self._copy_valid_project(temp_dir)
             for relative_path, old, new in (
                 (
                     "docs/specs/sample-spec.md",
-                    "- Gate S: Approved",
-                    "- Gate S: Pending",
+                    "- Requirements confirmation: Approved",
+                    "- Requirements confirmation: Pending",
                 ),
                 (
                     "docs/plans/sample-roadmap.md",
-                    "- Gate P: Approved",
-                    "- Gate P: Awaiting owner",
+                    "- Implementation approval: Approved",
+                    "- Implementation approval: Awaiting owner",
                 ),
                 (
                     "docs/plans/sample-m01-contracts.md",
-                    "- Gate P: Approved",
-                    "- Gate P: Rejected",
+                    "- Implementation approval: Approved",
+                    "- Implementation approval: Rejected",
                 ),
             ):
                 path = repo_root / relative_path
@@ -195,15 +195,49 @@ class ValidateRepositoryTests(unittest.TestCase):
             missing = [
                 issue
                 for issue in issues
-                if issue.code == "GATE_APPROVAL_MISSING"
+                if issue.code in {
+                    "REQUIREMENTS_CONFIRMATION_MISSING",
+                    "IMPLEMENTATION_APPROVAL_MISSING",
+                }
             ]
             self.assertEqual(3, len(missing))
             self.assertEqual(
-                {"Gate S", "Gate P"},
                 {
-                    "Gate S" if "Gate S" in issue.message else "Gate P"
+                    "Requirements confirmation",
+                    "Implementation approval",
+                },
+                {
+                    (
+                        "Requirements confirmation"
+                        if "Requirements confirmation" in issue.message
+                        else "Implementation approval"
+                    )
                     for issue in missing
                 },
+            )
+
+    def test_legacy_gate_metadata_does_not_satisfy_requirements_confirmation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = self._copy_valid_project(temp_dir)
+            spec_path = repo_root / "docs/specs/sample-spec.md"
+            spec_path.write_text(
+                spec_path.read_text(encoding="utf-8").replace(
+                    "- Requirements confirmation: Approved",
+                    "- Gate " + "S: Approved",
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_repository(repo_root)
+
+            self.assertTrue(
+                any(
+                    issue.code == "REQUIREMENTS_CONFIRMATION_MISSING"
+                    and issue.path == Path("docs/specs/sample-spec.md")
+                    for issue in issues
+                )
             )
 
     def test_two_active_plans_are_rejected(self) -> None:
@@ -403,7 +437,7 @@ class ValidateRepositoryTests(unittest.TestCase):
                 roadmap_path.read_text(encoding="utf-8")
                 .replace(
                     "- Status: Approved",
-                    "- Status: Awaiting Gate P — M02",
+                    "- Status: Awaiting implementation approval — M02",
                 )
                 .replace(
                     "- Current milestone: M01",
@@ -539,22 +573,22 @@ class ValidateRepositoryTests(unittest.TestCase):
             self.assertEqual(1, len(task_count))
             self.assertIn("found 1", task_count[0].message)
 
-    def test_change_proposal_requires_approved_status_and_gate_delta(
+    def test_change_request_requires_approved_status_and_change_approval(
         self,
     ) -> None:
         for old, new in (
-            ("- Status: Approved", "- Status: Pending Gate Δ"),
-            ("- Gate Δ: Approved", "- Gate Δ: Pending"),
+            ("- Status: Approved", "- Status: Pending"),
+            ("- Change approval: Approved", "- Change approval: Pending"),
         ):
             with self.subTest(new=new):
                 with tempfile.TemporaryDirectory() as temp_dir:
                     repo_root = self._copy_valid_project(temp_dir)
-                    proposal_path = (
+                    request_path = (
                         repo_root
-                        / "docs/changes/sample-cp01-traceability.md"
+                        / "docs/changes/sample-cr01-traceability.md"
                     )
-                    proposal_path.write_text(
-                        proposal_path.read_text(encoding="utf-8").replace(
+                    request_path.write_text(
+                        request_path.read_text(encoding="utf-8").replace(
                             old,
                             new,
                         ),
@@ -566,12 +600,12 @@ class ValidateRepositoryTests(unittest.TestCase):
                     pending = [
                         issue
                         for issue in issues
-                        if issue.code == "CHANGE_PROPOSAL_PENDING"
+                        if issue.code == "CHANGE_REQUEST_PENDING"
                     ]
                     self.assertEqual(1, len(pending))
                     self.assertEqual(
                         Path(
-                            "docs/changes/sample-cp01-traceability.md"
+                            "docs/changes/sample-cr01-traceability.md"
                         ),
                         pending[0].path,
                     )
@@ -629,12 +663,12 @@ class ValidateRepositoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir).resolve()
             shutil.copytree(fixture_root, repo_root, dirs_exist_ok=True)
-            proposal_path = (
+            change_request_path = (
                 repo_root
-                / "docs/changes/sample-cp01-traceability.md"
+                / "docs/changes/sample-cr01-traceability.md"
             )
-            proposal_path.write_text(
-                proposal_path.read_text(encoding="utf-8")
+            change_request_path.write_text(
+                change_request_path.read_text(encoding="utf-8")
                 + "\n### REQ-SAMPLE-999 — Not a specification definition\n",
                 encoding="utf-8",
             )
@@ -648,7 +682,7 @@ class ValidateRepositoryTests(unittest.TestCase):
             ]
             self.assertEqual(1, len(unknown))
             self.assertEqual(
-                Path("docs/changes/sample-cp01-traceability.md"),
+                Path("docs/changes/sample-cr01-traceability.md"),
                 unknown[0].path,
             )
             self.assertEqual(16, unknown[0].line)

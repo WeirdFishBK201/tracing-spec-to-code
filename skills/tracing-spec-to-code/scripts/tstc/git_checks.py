@@ -24,7 +24,7 @@ _TRAILER = re.compile(r"^([A-Za-z][A-Za-z-]*):[ \t]+(\S(?:.*\S)?)$")
 _TRAILER_NAMES = {
     "milestone": "Milestone",
     "requirements": "Requirements",
-    "change-proposals": "Change-Proposals",
+    "change-requests": "Change-Requests",
 }
 _WINDOWS_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
 _INVALID_PATH_CHARS = frozenset("*?[")
@@ -341,8 +341,8 @@ def validate_commit_message(
         "milestone": record.milestone_name,
         "requirements": ", ".join(record.plan_requirement_ids),
     }
-    if record.approved_proposals:
-        expected["change-proposals"] = ", ".join(record.approved_proposals)
+    if record.approved_change_requests:
+        expected["change-requests"] = ", ".join(record.approved_change_requests)
     for key, value in expected.items():
         actual = trailers.get(key, [])
         if actual != [value]:

@@ -1,8 +1,9 @@
 # Workflow policy
 
-Use this policy when establishing facts, planning milestones, crossing gates,
+Use this policy when establishing facts, planning milestones, recording
+approvals,
 or handling deviations. Keep state in the spec, roadmap, current milestone
-plan, and approved change proposals; do not create a document for each action.
+plan, and approved Change Requests; do not create a document for each action.
 
 ## Fact precedence
 
@@ -14,25 +15,26 @@ Use the most specific approved source without contradicting a higher source:
 3. The approved current milestone plan defines task scope and verification.
 4. Implementation and tests realize those facts; they do not silently redefine
    them.
-5. An approved change proposal amends affected sources through Gate Δ.
+5. An approved Change Request amends affected sources through Change approval.
 
 Conversation, existing code, elapsed effort, deadlines, and assumptions are
 evidence or constraints, not approval. If sources disagree or approval is
 unknown, stop affected work and report the state.
 
-## Normal flow and gates
+## Normal flow and approvals
 
-1. Draft the spec, assign stable Requirement IDs, and obtain **Gate S**.
-   Gate S approves the spec.
+1. Draft the spec, assign stable Requirement IDs, and obtain **Requirements
+   confirmation**. Requirements confirmation approves the spec.
 2. Draft a short roadmap and only the next executable milestone plan, then
-   obtain **Gate P**. Gate P approves both artifacts for that milestone.
+   obtain **Implementation approval**. Implementation approval approves both
+   artifacts for that milestone.
 3. Execute one plan task at a time using the task-execution policy. Keep the
    repository runnable and independently verifiable at each checkpoint.
 4. Before milestone completion, run the recorded broader verification and
    persist actual evidence in the milestone plan.
 5. Mark the milestone complete only when its outcome, tasks, traceability, and
    verification are complete. The next milestone may then receive a detailed
-   plan and a new Gate P.
+   plan and new Implementation approval.
 
 Approval must be explicit and recorded. Silence, an ambiguous response, a
 passing validator, or prior approval of a different artifact is not approval.
@@ -51,7 +53,7 @@ passing validator, or prior approval of a different artifact is not approval.
 - Treat urgency, spare time, or a request to “prepare ahead” as insufficient to
   bypass this boundary.
 
-## Deviations and Gate Δ
+## Deviations and Change approval
 
 A **material deviation** changes an approved product fact or the observable
 contract: requirement meaning or acceptance criteria, milestone outcome or
@@ -63,8 +65,8 @@ an implementation detail within task scope, a path correction caused by the
 actual repository layout that keeps the same approved component and scope
 boundary, or extra verification that does not weaken the approved test
 strategy. A path change that crosses a component or scope boundary is material
-and requires Gate Δ. Record a non-material deviation in the milestone plan
-with evidence; it does not need Gate Δ.
+and requires Change approval. Record a non-material deviation in the milestone
+plan with evidence; it does not need Change approval.
 
 When a possible material deviation appears:
 
@@ -74,11 +76,11 @@ When a possible material deviation appears:
 3. Prepare an impact analysis covering affected requirements, milestones,
    tasks, implementation paths/interfaces, tests, evidence, migration or
    compatibility risk, and alternatives.
-4. In the same response that pauses the work, draft a change proposal
+4. In the same response that pauses the work, draft a Change Request
    containing that impact analysis without rewriting the approved fact
    sources. Do not merely ask the user to prepare or request the analysis or
-   proposal.
-5. Ask for explicit **Gate Δ** approval. Do not treat silence as approval.
+   request.
+5. Ask for explicit **Change approval**. Do not treat silence as approval.
 6. If approved, record the approval and update every affected source in
    precedence order before resuming. If rejected, follow the approved facts.
 
@@ -92,6 +94,6 @@ continuing.
 At each task checkpoint, update the current milestone plan with task status,
 Requirement IDs, changed paths or interfaces, verification strategy and
 reason, commands, expected and actual results, risks, and deviations. Before
-milestone delivery, also record broader verification, approved proposals, and
+milestone delivery, also record broader verification, approved requests, and
 known limitations. Record commit metadata when a milestone commit exists. Do
 not claim completion when required verification failed or did not run.

@@ -26,7 +26,7 @@ COMPLETE_PLAN = """\
 - Status: Approved — In Progress
 - Milestone: M03 — Evidence and commit
 - Requirements: REQ-SAMPLE-010, REQ-SAMPLE-016
-- Gate P: Approved
+- Implementation approval: Approved
 
 ## Tasks
 
@@ -54,7 +54,7 @@ COMPLETE_PLAN = """\
 | `M03-T01` | `Completed` | `tests.test_evidence`: 8/8 PASS |
 | `M03-T02` | `Completed` | `tests.test_evidence`: 8/8 PASS |
 
-- Approved proposals: CP-05
+- Approved Change Requests: CR-05
 - Deviations: None
 - Baseline dirty paths: None
 
@@ -80,7 +80,7 @@ feat(evidence): validate milestone evidence
 
 Milestone: M03 Evidence and commit
 Requirements: REQ-SAMPLE-010, REQ-SAMPLE-016
-Change-Proposals: CP-05
+Change-Requests: CR-05
 ```
 """
 
@@ -143,14 +143,14 @@ class EvidenceTests(unittest.TestCase):
         self,
         temp_dir: str,
         content: str = COMPLETE_PLAN,
-        approved_proposals: tuple[str, ...] = ("CP-05",),
+        approved_change_requests: tuple[str, ...] = ("CR-05",),
     ):
         repo_root, plan_path = self._write_plan(temp_dir, content)
         record = parse_evidence(repo_root, plan_path)
         issues = validate_evidence(
             record,
             self._known_plan(plan_path),
-            approved_proposals,
+            approved_change_requests,
         )
         return record, issues
 
@@ -172,7 +172,7 @@ class EvidenceTests(unittest.TestCase):
             ("Targeted", "Broader"),
             tuple(row.scope for row in record.verifications),
         )
-        self.assertEqual(("CP-05",), record.approved_proposals)
+        self.assertEqual(("CR-05",), record.approved_change_requests)
         self.assertEqual((), record.deviations)
         self.assertEqual((), record.baseline_dirty_paths)
         self.assertEqual(
@@ -359,12 +359,12 @@ class EvidenceTests(unittest.TestCase):
                     )
                 )
 
-    def test_proposals_must_exactly_match_approved_proposals(self) -> None:
-        # Break caught: missing or unapproved proposal IDs enter commit evidence.
+    def test_change_requests_must_exactly_match_approved_change_requests(self) -> None:
+        # Break caught: missing or unapproved Change Request IDs enter commit evidence.
         cases = (
-            ("- Approved proposals: CP-05", "- Approved proposals: None"),
-            ("- Approved proposals: CP-05", "- Approved proposals: CP-06"),
-            ("- Approved proposals: CP-05", "- Approved proposals: CP-05, CP-06"),
+            ("- Approved Change Requests: CR-05", "- Approved Change Requests: None"),
+            ("- Approved Change Requests: CR-05", "- Approved Change Requests: CR-06"),
+            ("- Approved Change Requests: CR-05", "- Approved Change Requests: CR-05, CR-06"),
         )
         for old, new in cases:
             with self.subTest(value=new):
@@ -377,7 +377,7 @@ class EvidenceTests(unittest.TestCase):
                 self.assertTrue(
                     any(
                         issue.code == "EVIDENCE_INCOMPLETE"
-                        and "approved proposals" in issue.message
+                        and "approved Change Requests" in issue.message
                         for issue in issues
                     )
                 )
@@ -388,9 +388,9 @@ class EvidenceTests(unittest.TestCase):
         # Break caught: blank metadata and state words masquerade as empty sets.
         cases = (
             (
-                "blank proposals",
-                "- Approved proposals: CP-05",
-                "- Approved proposals:",
+                "blank Change Requests",
+                "- Approved Change Requests: CR-05",
+                "- Approved Change Requests:",
                 (),
                 {"EVIDENCE_INCOMPLETE"},
             ),
@@ -398,21 +398,21 @@ class EvidenceTests(unittest.TestCase):
                 "blank deviations",
                 "- Deviations: None",
                 "- Deviations:",
-                ("CP-05",),
+                ("CR-05",),
                 {"EVIDENCE_INCOMPLETE"},
             ),
             (
                 "pending baseline",
                 "- Baseline dirty paths: None",
                 "- Baseline dirty paths: Pending",
-                ("CP-05",),
+                ("CR-05",),
                 {"EVIDENCE_INCOMPLETE", "STAGED_SCOPE_INVALID"},
             ),
             (
                 "skipped baseline",
                 "- Baseline dirty paths: None",
                 "- Baseline dirty paths: Skipped",
-                ("CP-05",),
+                ("CR-05",),
                 {"EVIDENCE_INCOMPLETE", "STAGED_SCOPE_INVALID"},
             ),
         )
@@ -422,7 +422,7 @@ class EvidenceTests(unittest.TestCase):
                     _, issues = self._parse_and_validate(
                         temp_dir,
                         COMPLETE_PLAN.replace(old, new),
-                        approved_proposals=approved,
+                        approved_change_requests=approved,
                     )
 
                 self.assertTrue(
@@ -432,14 +432,14 @@ class EvidenceTests(unittest.TestCase):
     def test_explicit_none_is_a_valid_empty_evidence_set(self) -> None:
         # Break caught: fail-closed blank handling accidentally rejects explicit None.
         content = COMPLETE_PLAN.replace(
-            "- Approved proposals: CP-05",
-            "- Approved proposals: None",
+            "- Approved Change Requests: CR-05",
+            "- Approved Change Requests: None",
         )
         with tempfile.TemporaryDirectory() as temp_dir:
             _, issues = self._parse_and_validate(
                 temp_dir,
                 content,
-                approved_proposals=(),
+                approved_change_requests=(),
             )
 
         self.assertEqual([], issues)
@@ -448,22 +448,22 @@ class EvidenceTests(unittest.TestCase):
         # Break caught: a field claims both an empty set and a concrete entry.
         cases = (
             (
-                "proposals",
-                "- Approved proposals: CP-05",
-                "- Approved proposals: None, CP-05",
-                ("CP-05",),
+                "Change Requests",
+                "- Approved Change Requests: CR-05",
+                "- Approved Change Requests: None, CR-05",
+                ("CR-05",),
             ),
             (
                 "deviations",
                 "- Deviations: None",
                 "- Deviations: None, DV-01",
-                ("CP-05",),
+                ("CR-05",),
             ),
             (
                 "baseline",
                 "- Baseline dirty paths: None",
                 "- Baseline dirty paths: None, user-notes.md",
-                ("CP-05",),
+                ("CR-05",),
             ),
         )
         for label, old, new, approved in cases:
@@ -472,7 +472,7 @@ class EvidenceTests(unittest.TestCase):
                     _, issues = self._parse_and_validate(
                         temp_dir,
                         COMPLETE_PLAN.replace(old, new),
-                        approved_proposals=approved,
+                        approved_change_requests=approved,
                     )
 
                 evidence_issues = [
@@ -671,7 +671,7 @@ feat(evidence): validate milestone evidence
                 self.assertEqual(0, record.task_status_table_count)
                 self.assertEqual(0, record.verification_table_count)
                 self.assertEqual(0, record.commit_scope_table_count)
-                self.assertEqual(0, record.approved_proposals_count)
+                self.assertEqual(0, record.approved_change_requests_count)
                 self.assertEqual(0, record.deviations_count)
                 self.assertEqual(0, record.baseline_dirty_paths_count)
                 self.assertEqual(1, record.commit_draft_count)

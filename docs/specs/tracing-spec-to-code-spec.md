@@ -1,216 +1,227 @@
 # tracing-spec-to-code Specification
 
-- 状态：Approved
-- Gate S：Approved
-- 批准日期：2026-07-29
-- 设计依据：`docs/design/2026-07-29-tracing-spec-to-code-design.md`
-- 产品边界：独立 skill 项目，不读取、不依赖、不修改 VGCCoach2
+- Status: Approved
+- Requirements confirmation: Approved
+- Approval date: 2026-07-29
+- Design basis: `docs/design/2026-07-29-tracing-spec-to-code-design.md`
+- Product boundary: an independent skill project; it does not read, depend on, or modify VGCCoach2
 
-## 1. 产品目标
+## 1. Product goal
 
-`tracing-spec-to-code` 为 agent 提供轻量、可检查的 Spec → Plan → Code 工作流。它通过稳定 ID、人工 gate、受限上下文、行为验证和 milestone commit 保持事实源与实现一致，同时避免重型状态机和过程文档膨胀。
+`tracing-spec-to-code` provides agents with a lightweight, inspectable Spec → Plan → Code workflow. Stable IDs, human approval, constrained context, behavioral verification, and milestone commits keep sources of truth aligned with implementation while avoiding a heavyweight state machine and process-document growth.
 
 ## 2. Requirements
 
-### REQ-TS2C-001 — 固定且可配置的 artifacts
+### REQ-TS2C-001 — Fixed and configurable artifacts
 
-系统必须为 spec、roadmap、当前 milestone plan 和 change proposal 提供固定默认路径与命名，并允许通过根目录 JSON 配置覆盖存放位置。
+The system must provide fixed default paths and names for the spec, roadmap, current milestone plan, and Change Request, while allowing a root-level JSON configuration to override their locations.
 
-验收条件：
+Acceptance criteria:
 
-- 无配置时使用设计文档定义的默认路径。
-- 合法配置能够覆盖文档目录和命名模板。
-- 配置不能关闭 ID、gate、traceability 或禁止静默偏离规则。
-- 无效配置产生明确、可定位的错误，不回退为猜测值。
+- Without configuration, use the defaults defined by the design document.
+- Valid configuration can override documentation directories and naming templates.
+- Configuration cannot disable IDs, approvals, traceability, or the no-silent-deviation rule.
+- Invalid configuration produces a clear, actionable error instead of guessed values.
 
-### REQ-TS2C-002 — 稳定的端到端追溯
+### REQ-TS2C-002 — Stable end-to-end traceability
 
-系统必须使用稳定 Requirement ID 连接 spec、roadmap milestone、plan task、implementation paths 和 test/verification evidence。
+The system must use stable Requirement IDs to connect the spec, roadmap milestones, plan tasks, implementation paths, and test/verification evidence.
 
-验收条件：
+Acceptance criteria:
 
-- Requirement ID 默认格式为 `REQ-<FEATURE>-NNN`，创建后不重编号、不复用。
-- Plan task ID 默认格式为 `MNN-TNN`。
-- Validator 能发现重复、缺失和未知引用。
-- 已完成 requirement 能追溯到 task、实现路径和实际验证结果。
-- 不强制在每个源码文件中添加 Requirement ID 注释。
+- The default Requirement ID format is `REQ-<FEATURE>-NNN`; IDs are never renumbered or reused after creation.
+- The default plan task ID format is `MNN-TNN`.
+- The validator detects duplicate, missing, and unknown references.
+- A completed requirement can be traced to tasks, implementation paths, and actual verification results.
+- Requirement ID comments are not required in every source file.
 
-### REQ-TS2C-003 — 禁止静默偏离
+### REQ-TS2C-003 — No silent deviation
 
-当 spec、plan、code 或 tests 出现实质不一致时，agent 必须暂停，通过 change proposal 与 Gate Δ 先更新事实源。
+When the spec, plan, code, or tests materially disagree, the agent must pause and update the sources of truth through a Change Request and Change Approval first.
 
-验收条件：
+Acceptance criteria:
 
-- Agent 明确报告不一致及证据。
-- 影响分析列出受影响的 requirement、milestone、task、实现和 tests。
-- 未经用户批准，不修改高层事实源或继续相关实现。
-- 用户沉默不视为批准。
-- 仅已批准 proposal 持久化为事实源。
+- The agent explicitly reports the inconsistency and evidence.
+- Impact analysis lists affected requirements, milestones, tasks, implementation, and tests.
+- Without user approval, the agent does not modify high-level sources of truth or continue related implementation.
+- User silence is not approval.
+- Only approved Change Requests are persisted as sources of truth.
 
-### REQ-TS2C-004 — 只详细规划下一个 milestone
+### REQ-TS2C-004 — Detail only the next milestone
 
-Roadmap 只能简述所有 milestone；详细 plan 只能对应下一个待执行 milestone。
+The roadmap may summarize every milestone; a detailed plan may cover only the next milestone to execute.
 
-验收条件：
+Acceptance criteria:
 
-- Roadmap 只包含 milestone outcome、依赖、requirements 和 verification gate。
-- 同一 feature 同时最多存在一个未完成的详细 milestone plan。
-- 每个 milestone 包含 2–5 个 task，目标值为 3 个，硬上限为 5 个。
-- 后续 milestone 在前一 milestone 完成前不展开详细 task。
+- The roadmap contains only milestone outcomes, dependencies, requirements, and verification gates.
+- At most one unfinished detailed milestone plan exists for a feature.
+- Each milestone has 2–5 tasks, with 3 as the target and 5 as the hard maximum.
+- Detailed tasks for later milestones are not expanded before the preceding milestone is complete.
 
-### REQ-TS2C-005 — 独立可运行与可验证
+### REQ-TS2C-005 — Independently runnable and verifiable
 
-每个 milestone 和 task 必须留下可运行、可独立验证的仓库状态。
+Each milestone and task must leave the repository runnable and independently verifiable.
 
-验收条件：
+Acceptance criteria:
 
-- 每个 task 有单一 outcome、精确范围和 targeted verification。
-- 每个 milestone 有不依赖未来实现的 observable outcome。
-- Milestone 完成前运行 broader verification。
-- 验证失败时不得声明完成。
+- Each task has one outcome, an exact scope, and targeted verification.
+- Each milestone has an observable outcome that does not depend on future implementation.
+- Broader verification runs before milestone completion.
+- Completion is not claimed when verification fails.
 
-### REQ-TS2C-006 — 自适应测试策略
+### REQ-TS2C-006 — Adaptive testing strategy
 
-系统必须按风险选择轻量行为验证、行为测试或 TDD。
+The system must select lightweight behavioral verification, behavioral tests, or TDD according to risk.
 
-验收条件：
+Acceptance criteria:
 
-- 一次性脚本、配置和低风险胶水改动可使用真实的轻量行为验证。
-- 核心业务、公共 API、复杂状态或复杂 bug 使用行为测试或 TDD。
-- Plan 记录策略、理由、命令、预期结果和实际结果。
-- 仅测试文件、符号或文本不存在不能构成有效 RED。
+- One-off scripts, configuration, and low-risk glue changes may use genuine lightweight behavioral verification.
+- Core business logic, public APIs, complex state, or complex bugs use behavioral tests or TDD.
+- The plan records the strategy, rationale, commands, expected results, and actual results.
+- A RED result consisting only of missing files, symbols, or text is invalid.
 
-### REQ-TS2C-007 — Task 级上下文限制
+### REQ-TS2C-007 — Task-level context limits
 
-执行 task 时只加载相关 requirements、当前 plan task、必要代码/tests 和上一 task 的压缩结果。
+While executing a task, load only the relevant requirements, current plan task, necessary code/tests, and the compressed result of the previous task.
 
-验收条件：
+Acceptance criteria:
 
-- 默认不加载完整历史讨论、未来 milestone 细节或无关 spec。
-- 上一 task 只传递改动路径、接口变化、验证结果和风险。
-- 上下文持续扩大时先重新拆分 task，不无限加载内容。
+- By default, do not load the complete discussion history, future milestone details, or unrelated spec sections.
+- Pass from the previous task only changed paths, interface changes, verification results, and risks.
+- When context keeps expanding, split the task again instead of loading unlimited context.
 
-### REQ-TS2C-008 — 轻量 gates、影响分析与 evidence
+### REQ-TS2C-008 — Lightweight approvals, impact analysis, and evidence
 
-系统必须提供 Gate S、Gate P、Gate Δ、影响分析和完成 evidence，但不得引入旧 W-series 式重型状态机。
+The system must provide Requirements Confirmation, Implementation Approval, Change Approval, impact analysis, and completion evidence without introducing the heavyweight W-series state machine.
 
-验收条件：
+Acceptance criteria:
 
-- Gate S 批准 spec；Gate P 批准 roadmap 与当前 milestone plan；Gate Δ 批准事实变化。
-- Milestone plan 持久记录 task 状态、追溯、实际验证、批准的 proposal、偏差和 commit metadata。
-- 未知或不确定状态 fail closed。
-- 不为每个动作生成独立状态文档。
+- Requirements Confirmation approves the spec; Implementation Approval approves the roadmap and current milestone plan; Change Approval approves changes to the sources of truth.
+- The milestone plan persistently records task status, traceability, actual verification, approved Change Requests, deviations, and commit metadata.
+- Unknown or uncertain states fail closed.
+- Do not create a separate state document for every action.
 
-### REQ-TS2C-009 — Delivery summary 只展示
+### REQ-TS2C-009 — Delivery summary is display-only
 
-Milestone delivery summary 默认只展示给用户，不创建单独报告文档。
+A milestone delivery summary is displayed to the user by default and does not create a separate report document.
 
-验收条件：
+Acceptance criteria:
 
-- 持久 evidence 写入 milestone plan。
-- 用户摘要包含 outcome、requirements、主要改动、验证、限制和 commit。
-- 摘要可显示下一 milestone 名称，但不展开其详细 plan。
+- Persistent evidence is written to the milestone plan.
+- The user summary includes the outcome, requirements, major changes, verification, limitations, and commit.
+- The summary may show the next milestone name but does not expand its detailed plan.
 
-### REQ-TS2C-010 — Milestone 自动 commit
+### REQ-TS2C-010 — Automatic milestone commit
 
-Milestone 全部完成并验证后，系统必须自动创建一个范围准确的 Git commit。
+After all milestone tasks are complete and verified, the system must create one accurately scoped Git commit.
 
-验收条件：
+Acceptance criteria:
 
-- Commit 前确认所有 task、验证、traceability 和 evidence 完成。
-- 只 stage 当前 milestone 文件，不包含用户无关改动。
-- 存在未决 Gate Δ 或验证失败时不 commit。
-- 每个 milestone 默认只有一个自动 commit。
+- Before committing, confirm that all tasks, verification, traceability, and evidence are complete.
+- Stage only current-milestone files; exclude unrelated user changes.
+- Do not commit when Change Approval is pending or verification has failed.
+- By default, each milestone has one automatic commit.
 
-### REQ-TS2C-011 — 准确简洁的 commit message
+### REQ-TS2C-011 — Accurate, concise commit message
 
-Milestone commit 必须使用 `type(scope): outcome`，并包含可追溯 trailers。
+The milestone commit must use `type(scope): outcome` and include traceable trailers.
 
-验收条件：
+Acceptance criteria:
 
-- Subject 描述 outcome，不罗列文件操作。
-- `Milestone` 与 `Requirements` trailers 必填。
-- 存在已批准 proposal 时加入 `Change-Proposals` trailer。
-- Gate P 批准 message 草案；完成时只按已批准事实最小校正。
+- The subject describes the outcome rather than listing file operations.
+- `Milestone` and `Requirements` trailers are required.
+- When approved Change Requests exist, add the `Change-Requests` trailer.
+- Implementation Approval approves the message draft; at completion, make only the smallest correction required by approved facts.
 
-### REQ-TS2C-012 — Git 操作 fail closed
+### REQ-TS2C-012 — Fail-closed Git operations
 
-系统不得自动 push；commit 权限、身份、hook 或签名失败时必须停止并报告。
+The system must not push automatically; it must stop and report when commit permission, identity, hooks, or signing fails.
 
-验收条件：
+Acceptance criteria:
 
-- 不执行自动 push、PR、merge 或远端 ref 修改。
-- Git 失败后不伪造成功状态。
-- 未完成 commit 时 milestone 保持未交付。
+- Do not automatically push, create a PR, merge, or modify remote refs.
+- Do not fabricate success after a Git failure.
+- Keep the milestone undelivered when the commit is incomplete.
 
-### REQ-TS2C-013 — 单一 canonical skill source
+### REQ-TS2C-013 — One canonical skill source
 
-仓库必须只维护一份 canonical skill，客户端适配器不得复制并独立演化 workflow 内容。
+The repository must maintain one canonical skill; client adapters must not copy and independently evolve workflow content.
 
-验收条件：
+Acceptance criteria:
 
-- Canonical source 位于 `skills/tracing-spec-to-code/`。
-- `SKILL.md` 仅使用广泛支持的 `name` 和 `description` frontmatter。
-- 内部资源使用相对路径。
-- Validator 只依赖 Python 标准库和 Git。
+- The canonical source is `skills/tracing-spec-to-code/`.
+- `SKILL.md` uses only broadly supported `name` and `description` frontmatter.
+- Internal resources use relative paths.
+- The validator depends only on the Python standard library and Git.
 
-### REQ-TS2C-014 — 多客户端分发
+### REQ-TS2C-014 — Multi-client distribution
 
-系统必须支持 registry 驱动的多客户端安装，并区分发布验证与结构兼容级别。
+The system must support registry-driven installation for multiple clients and distinguish release verification from structural compatibility levels.
 
-验收条件：
+Acceptance criteria:
 
-- Level 1：Codex、Claude Code、GitHub Copilot CLI、Antigravity、Gemini CLI。
-- Level 2：Cursor、Windsurf/Cascade、Cline。
-- Installer 复制完整 canonical skill 目录，已有目标不静默覆盖。
-- 新客户端主要通过 registry 增加，不修改 workflow core。
+- The registry defines the approved clients and their Level 1 or Level 2 support.
+- The installer copies the complete canonical skill directory and never silently overwrites an existing target.
+- New clients are added primarily through the registry without modifying the workflow core.
 
-### REQ-TS2C-015 — 无指导基线与压力验证
+### REQ-TS2C-015 — Unguided baseline and pressure verification
 
-Skill 发布前必须经过未加载 skill 的基线和加载后的压力场景验证。
+Before release, the skill must undergo an unloaded-skill baseline and loaded-skill pressure-scenario verification.
 
-验收条件：
+Acceptance criteria:
 
-- 基线记录 agent 的实际选择和逐字合理化理由。
-- 每个压力场景组合至少三种压力。
-- 新借口进入规则修订与重测闭环。
-- 关键 wording 变体至少重复 5 次。
-- Level 1 完成安装、发现和最小流程验证；Level 2 完成结构与 smoke test。
+- The baseline records the agent’s actual choice and verbatim rationale.
+- Each pressure scenario combines at least three pressure types.
+- New rationalizations enter a rule-revision and retest loop.
+- Key wording variants are repeated at least five times.
+- Level 1 completes installation, discovery, and a minimal workflow; Level 2 completes structural and smoke verification.
 
-### REQ-TS2C-016 — 项目隔离
+### REQ-TS2C-016 — Project isolation
 
-本项目必须始终独立于 VGCCoach2。
+This project must remain independent of VGCCoach2 at all times.
 
-验收条件：
+Acceptance criteria:
 
-- 实现、tests、fixtures 和文档不读取或引用 VGCCoach2 的项目内容。
-- 不把 VGCCoach2 路径加入工具默认值或测试输入。
-- 不以兼容旧 agentic-workflow 为由扩大当前项目范围。
+- Implementation, tests, fixtures, and documentation do not read or reference VGCCoach2 project content.
+- Do not add VGCCoach2 paths to tool defaults or test inputs.
+- Do not expand the current project to preserve compatibility with the legacy `agentic-workflow`.
 
-## 3. 非目标
+### REQ-TS2C-017 — Readable localized workflow terminology
 
-- 通用 issue tracker、项目管理平台或状态数据库。
-- 全项目一次性详细实施计划。
-- 自动修改已批准事实源。
-- 只为留下记录而创建的 delivery report。
-- 自动安装 Python、Git 或其他系统依赖。
-- 自动 push、PR、merge 或 release。
+The maintained repository must use one descriptive English workflow contract, while user-facing approval labels may be selected in English or Simplified Chinese according to the latest user message.
 
-## 4. 全局约束
+Acceptance criteria:
 
-- 每次只执行一个 milestone plan。
-- 每个 milestone 结束时仓库必须可运行、可验证。
-- 未通过人工 gate 不进入下一阶段。
-- 所有未知状态默认暂停，不自动猜测。
-- 文档与实现使用 UTF-8；命令和路径必须兼容 Windows。
-- Python 最低版本建议为 3.10，最终以 Gate P 批准值为准。
+- Maintained prose, documentation, templates, filenames, JSON, YAML, and commit trailers use the descriptive English terms Requirements Confirmation, Implementation Approval, Change Approval, and Change Request.
+- Stable machine names are `requirements_confirmation`, `implementation_approval`, `change_approval`, `change_request`, `change_request_id`, and `approved_change_requests`; Change Request IDs use `CR-NN` and commit trailers use `Change-Requests`.
+- User-facing labels use English or Simplified Chinese according to the dominant language of the latest user message; ambiguous or unsupported input falls back to English.
+- The four exact Simplified Chinese labels are localized data and the only permitted non-English text in maintained documentation examples.
+- This is a breaking migration: no compatibility aliases, fallback parsing, migration readers, or dual writes are retained.
 
-## 5. 完成定义
+## 3. Non-goals
 
-项目完成需要：
+- A general issue tracker, project-management platform, or status database.
+- One detailed implementation plan for the entire project.
+- Automatic modification of approved sources of truth.
+- A delivery report created only to leave a record.
+- Automatic installation of Python, Git, or other system dependencies.
+- Automatic push, PR, merge, or release.
 
-- REQ-TS2C-001 至 REQ-TS2C-016 均有 milestone、task、implementation 和 verification evidence。
-- Level 1 客户端验证通过且 Level 2 smoke test 有实际记录；或者由 Approved Gate Δ 明确记录行政完成豁免、未验证边界和不得声称的客户端结果。
-- 无指导基线、加载后压力测试和 wording micro-tests 完成。
-- Canonical skill、validator、installer、文档和发布元数据可从干净 clone 使用。
-- 不存在未决 Gate Δ、未解释偏差或未验证完成声明。
+## 4. Global constraints
+
+- Execute only one milestone plan at a time.
+- At the end of each milestone, the repository must be runnable and verifiable.
+- Do not enter the next stage without human approval.
+- Pause on all unknown states; do not guess automatically.
+- Documentation and implementation use UTF-8; commands and paths must be Windows-compatible.
+- Python 3.10 is the recommended minimum; the final value is determined by Implementation Approval.
+
+## 5. Definition of done
+
+Project completion requires:
+
+- REQ-TS2C-001 through REQ-TS2C-017 each have milestone, task, implementation, and verification evidence.
+- Level 1 client verification passes and Level 2 smoke tests have actual records, or an Approved Change Request explicitly records an administrative completion waiver, the unverified boundary, and client results that must not be claimed.
+- The unguided baseline, loaded pressure tests, and wording micro-tests are complete.
+- The canonical skill, validator, installer, documentation, and release metadata work from a clean clone.
+- No pending Change Approval, unexplained deviation, or unverified completion claim remains.

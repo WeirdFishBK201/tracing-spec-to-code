@@ -9,10 +9,10 @@ scope, and the approved commit draft.
 Before any Git mutation:
 
 1. Read the current roadmap and the exact active milestone plan.
-2. Confirm Gate P is `Approved`, no Gate Δ is pending, every task is
+2. Confirm Implementation approval is `Approved`, no Change approval is pending, every task is
    `Completed`, and the plan records targeted and broader verification as
    `PASS`.
-3. Confirm `Approved proposals`, `Deviations`, `Baseline dirty paths`,
+3. Confirm `Approved requests`, `Deviations`, `Baseline dirty paths`,
    traceability, verification, commit scope, and commit draft are complete.
 4. Compare the milestone-start baseline dirty paths with the commit scope. Any
    overlap blocks delivery; do not guess which hunks belong to whom.

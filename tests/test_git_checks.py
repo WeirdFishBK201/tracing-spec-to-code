@@ -31,21 +31,21 @@ PLAN_RELATIVE = Path("docs/plans/sample-m01-contracts.md")
 SCOPE = (
     PLAN_RELATIVE,
     Path("docs/plans/sample-roadmap.md"),
-    Path("docs/changes/sample-cp01-traceability.md"),
+    Path("docs/changes/sample-cr01-traceability.md"),
     Path("src/app.py"),
     Path("tests/test_app.py"),
 )
-CUSTOM_PROPOSAL_TEMPLATE = (
-    "{feature}-change-{proposal}-{proposal_slug}.md"
+CUSTOM_CHANGE_REQUEST_TEMPLATE = (
+    "{feature}-change-{change_request}-{change_request_slug}.md"
 )
-CUSTOM_CP01 = Path("docs/changes/sample-change-01-traceability.md")
+CUSTOM_CR01 = Path("docs/changes/sample-change-01-traceability.md")
 PLAN = """\
 # Sample M01 Contracts Plan
 
 - Status: Approved — In Progress
 - Milestone: M01 — Contracts
 - Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002
-- Gate P: Approved
+- Implementation approval: Approved
 
 ## Tasks
 
@@ -73,7 +73,7 @@ PLAN = """\
 | `M01-T01` | `Completed` | `tests.test_app`: 2/2 PASS |
 | `M01-T02` | `Completed` | `tests.test_app`: 2/2 PASS |
 
-- Approved proposals: CP-01
+- Approved Change Requests: CR-01
 - Deviations: None
 - Baseline dirty paths: None
 
@@ -90,7 +90,7 @@ PLAN = """\
 |---|---|
 | `docs/plans/sample-m01-contracts.md` | Milestone evidence |
 | `docs/plans/sample-roadmap.md` | Milestone status |
-| `docs/changes/sample-cp01-traceability.md` | Approved proposal |
+| `docs/changes/sample-cr01-traceability.md` | Approved Change Request |
 | `src/app.py` | Implementation |
 | `tests/test_app.py` | Behavior tests |
 
@@ -101,7 +101,7 @@ feat(evidence): validate milestone delivery
 
 Milestone: M01 Contracts
 Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002
-Change-Proposals: CP-01
+Change-Requests: CR-01
 ```
 """
 
@@ -125,32 +125,32 @@ def prepare_repository(
     temp_dir: str,
     *,
     initialize_git: bool = True,
-    custom_proposal_template: bool = False,
+    custom_change_request_template: bool = False,
 ) -> Path:
     repo_root = Path(temp_dir).resolve() / "sample"
     shutil.copytree(REPO_ROOT / "tests/fixtures/valid-project", repo_root)
     plan_content = PLAN
     scope = SCOPE
-    if custom_proposal_template:
-        default_proposal = Path(
-            "docs/changes/sample-cp01-traceability.md"
+    if custom_change_request_template:
+        default_change_request = Path(
+            "docs/changes/sample-cr01-traceability.md"
         )
-        (repo_root / default_proposal).rename(repo_root / CUSTOM_CP01)
+        (repo_root / default_change_request).rename(repo_root / CUSTOM_CR01)
         config_path = repo_root / ".tracing-spec-to-code.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
-        config["change_proposal_filename_template"] = (
-            CUSTOM_PROPOSAL_TEMPLATE
+        config["change_request_filename_template"] = (
+            CUSTOM_CHANGE_REQUEST_TEMPLATE
         )
         config_path.write_text(
             json.dumps(config, indent=2) + "\n",
             encoding="utf-8",
         )
         plan_content = plan_content.replace(
-            default_proposal.as_posix(),
-            CUSTOM_CP01.as_posix(),
+            default_change_request.as_posix(),
+            CUSTOM_CR01.as_posix(),
         )
         scope = tuple(
-            CUSTOM_CP01 if path == default_proposal else path
+            CUSTOM_CR01 if path == default_change_request else path
             for path in scope
         )
     (repo_root / PLAN_RELATIVE).write_text(plan_content, encoding="utf-8")
@@ -199,37 +199,37 @@ def git_snapshot(repo_root: Path) -> tuple[bytes, ...]:
     )
 
 
-def write_proposal(
+def write_change_request(
     repo_root: Path,
     *,
-    proposal_id: str,
+    change_request_id: str,
     task_id: str,
     status: str = "Approved",
-    gate: str = "Approved",
+    change_approval: str = "Approved",
     filename: str | None = None,
     affected_label: str = "Affected tasks",
     affected_separator: str = ":",
     top_extra: str = "",
     impact: str = "No interface change.",
 ) -> Path:
-    number = int(proposal_id.split("-", 1)[1])
+    number = int(change_request_id.split("-", 1)[1])
     path = (
         repo_root
         / "docs"
         / "changes"
-        / (filename or f"sample-cp{number:02d}-additional.md")
+        / (filename or f"sample-cr{number:02d}-additional.md")
     )
     path.write_text(
         f"""\
-# {proposal_id} — Additional context
+# {change_request_id} — Additional context
 
 - Status: {status}
-- Gate Δ: {gate}
+- Change approval: {change_approval}
 - Requirements: REQ-SAMPLE-001
 - {affected_label}{affected_separator} {task_id}
 {top_extra}
 
-## Proposed delta
+## Proposed change
 
 Clarify one workflow edge.
 
@@ -439,27 +439,27 @@ class GitChecksTests(unittest.TestCase):
         invalid_messages = (
             "update files\n\nMilestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
-            "Change-Proposals: CP-01",
+            "Change-Requests: CR-01",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M02 Other\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
-            "Change-Proposals: CP-01",
+            "Change-Requests: CR-01",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M01 Contracts\nMilestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
-            "Change-Proposals: CP-01",
+            "Change-Requests: CR-01",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-002, REQ-SAMPLE-001\n"
-            "Change-Proposals: CP-01",
+            "Change-Requests: CR-01",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
-            "Change-Proposals: CP-99",
+            "Change-Requests: CR-99",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
-            "Change-Proposals CP-01",
+            "Change-Requests CR-01",
             "feat(evidence): validate milestone delivery\n\n"
             "Milestone: M01 Contracts\n"
             "Requirements: REQ-SAMPLE-001, REQ-SAMPLE-002\n"
@@ -482,17 +482,17 @@ class GitChecksTests(unittest.TestCase):
             )
         )
 
-    def test_change_proposals_trailer_is_forbidden_for_empty_set(self) -> None:
-        # Break caught: proposal trailers can claim approvals not in evidence.
+    def test_change_requests_trailer_is_forbidden_for_empty_set(self) -> None:
+        # Break caught: Change Request trailers can claim approvals not in evidence.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
             record = parse_evidence(repo_root, repo_root / PLAN_RELATIVE)
-            without_proposals = dataclasses.replace(
+            without_change_requests = dataclasses.replace(
                 record,
-                approved_proposals=(),
+                approved_change_requests=(),
             )
 
-            issues = validate_commit_message(without_proposals)
+            issues = validate_commit_message(without_change_requests)
 
         self.assertTrue(
             any(issue.code == "COMMIT_MESSAGE_INVALID" for issue in issues)
@@ -581,7 +581,7 @@ class GitChecksTests(unittest.TestCase):
 
         self.assertEqual(before, after)
 
-    def test_precommit_requires_plan_roadmap_and_approved_proposal_in_scope(
+    def test_precommit_requires_plan_roadmap_and_approved_change_request_in_scope(
         self,
     ) -> None:
         # Break caught: an exact staged set omits milestone governance artifacts.
@@ -593,8 +593,8 @@ class GitChecksTests(unittest.TestCase):
                 "| `docs/plans/sample-roadmap.md` | Milestone status |\n",
                 "",
             ).replace(
-                "| `docs/changes/sample-cp01-traceability.md` | "
-                "Approved proposal |\n",
+                "| `docs/changes/sample-cr01-traceability.md` | "
+                "Approved Change Request |\n",
                 "",
             )
             plan_path.write_text(content, encoding="utf-8")
@@ -605,7 +605,7 @@ class GitChecksTests(unittest.TestCase):
                 "--staged",
                 "--",
                 "docs/plans/sample-roadmap.md",
-                "docs/changes/sample-cp01-traceability.md",
+                "docs/changes/sample-cr01-traceability.md",
             )
 
             issues = validate_precommit(repo_root, plan_path)
@@ -616,14 +616,14 @@ class GitChecksTests(unittest.TestCase):
             if issue.code == "STAGED_SCOPE_INVALID"
             for path in (
                 "docs/plans/sample-roadmap.md",
-                "docs/changes/sample-cp01-traceability.md",
+                "docs/changes/sample-cr01-traceability.md",
             )
             if path in issue.message
         }
         self.assertEqual(
             {
                 "docs/plans/sample-roadmap.md",
-                "docs/changes/sample-cp01-traceability.md",
+                "docs/changes/sample-cr01-traceability.md",
             },
             missing,
         )
@@ -745,13 +745,13 @@ class GitChecksTests(unittest.TestCase):
             sum("tests/test_app.py" in value for value in required_messages),
         )
 
-    def test_precommit_ignores_approved_historical_task_proposal(self) -> None:
+    def test_precommit_ignores_approved_historical_task_change_request(self) -> None:
         # Break caught: every repository approval is treated as current milestone scope.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            historical = write_proposal(
+            historical = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M00-T01",
             )
             before = git_snapshot(repo_root)
@@ -771,13 +771,13 @@ class GitChecksTests(unittest.TestCase):
             staged,
         )
 
-    def test_proposal_ownership_ignores_comments_fences_and_prose(self) -> None:
+    def test_change_request_ownership_ignores_comments_fences_and_prose(self) -> None:
         # Break caught: incidental task text is mistaken for structured ownership.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            write_proposal(
+            write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M00-T01",
                 top_extra=(
                     "<!-- - Affected tasks: M01-T01 -->\n"
@@ -792,13 +792,13 @@ class GitChecksTests(unittest.TestCase):
 
         self.assertEqual([], issues)
 
-    def test_chinese_affected_task_metadata_selects_current_proposal(self) -> None:
+    def test_chinese_affected_task_metadata_selects_current_change_request(self) -> None:
         # Break caught: repository-native Chinese metadata is silently ignored.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            current = write_proposal(
+            current = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M00-T01， M01-T01",
                 affected_label="影响 Task",
                 affected_separator="：",
@@ -810,7 +810,7 @@ class GitChecksTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue.code == "EVIDENCE_INCOMPLETE"
-                and "approved proposals" in issue.message
+                and "approved Change Requests" in issue.message
                 for issue in issues
             )
         )
@@ -822,10 +822,10 @@ class GitChecksTests(unittest.TestCase):
             )
         )
 
-    def test_approved_proposal_invalid_affected_task_metadata_fails_closed(
+    def test_approved_change_request_invalid_affected_task_metadata_fails_closed(
         self,
     ) -> None:
-        # Break caught: ambiguous ownership is treated as a historical proposal.
+        # Break caught: ambiguous ownership is treated as a historical Change Request.
         mutations = {
             "missing": lambda content: content.replace(
                 "- Affected tasks: M01-T01\n",
@@ -853,13 +853,13 @@ class GitChecksTests(unittest.TestCase):
             with self.subTest(label=label):
                 with tempfile.TemporaryDirectory() as temp_dir:
                     repo_root = prepare_repository(temp_dir)
-                    proposal = write_proposal(
+                    change_request = write_change_request(
                         repo_root,
-                        proposal_id="CP-02",
+                        change_request_id="CR-02",
                         task_id="M01-T01",
                     )
-                    proposal.write_text(
-                        mutate(proposal.read_text(encoding="utf-8")),
+                    change_request.write_text(
+                        mutate(change_request.read_text(encoding="utf-8")),
                         encoding="utf-8",
                     )
 
@@ -870,26 +870,26 @@ class GitChecksTests(unittest.TestCase):
                         )
                     except PrecommitRuntimeError as error:
                         self.fail(
-                            "deterministic proposal defect must be an issue, "
+                            "deterministic Change Request defect must be an issue, "
                             f"not runtime: {error}"
                         )
 
                 self.assertTrue(
                     any(
                         issue.code == "EVIDENCE_INCOMPLETE"
-                        and proposal.relative_to(repo_root).as_posix()
+                        and change_request.relative_to(repo_root).as_posix()
                         == issue.path.as_posix()
                         for issue in issues
                     )
                 )
 
-    def test_precommit_requires_proposal_linked_to_selected_plan_task(self) -> None:
+    def test_precommit_requires_change_request_linked_to_selected_plan_task(self) -> None:
         # Break caught: task-linked approval is omitted from evidence/scope/message.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            current = write_proposal(
+            current = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
             )
 
@@ -899,7 +899,7 @@ class GitChecksTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue.code == "EVIDENCE_INCOMPLETE"
-                and "approved proposals" in issue.message
+                and "approved Change Requests" in issue.message
                 for issue in issues
             )
         )
@@ -913,43 +913,43 @@ class GitChecksTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue.code == "COMMIT_MESSAGE_INVALID"
-                and "Change-Proposals" in issue.message
+                and "Change-Requests" in issue.message
                 for issue in issues
             )
         )
 
-    def test_repository_validation_still_reports_pending_historical_proposal(
+    def test_repository_validation_still_reports_pending_historical_change_request(
         self,
     ) -> None:
         # Break caught: milestone filtering suppresses repository workflow issues.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            write_proposal(
+            write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M00-T01",
                 status="Pending",
-                gate="Pending",
+                change_approval="Pending",
             )
 
             issues = validate_repository(repo_root)
 
         self.assertTrue(
-            any(issue.code == "CHANGE_PROPOSAL_PENDING" for issue in issues)
+            any(issue.code == "CHANGE_REQUEST_PENDING" for issue in issues)
         )
 
-    def test_custom_proposal_template_requires_current_task_id_everywhere(
+    def test_custom_change_request_template_requires_current_task_id_everywhere(
         self,
     ) -> None:
-        # Break caught: custom filenames evade authoritative proposal ID checks.
+        # Break caught: custom filenames evade authoritative Change Request ID checks.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(
                 temp_dir,
-                custom_proposal_template=True,
+                custom_change_request_template=True,
             )
-            current = write_proposal(
+            current = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
                 filename="sample-change-02-additional.md",
             )
@@ -960,7 +960,7 @@ class GitChecksTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue.code == "EVIDENCE_INCOMPLETE"
-                and "approved proposals" in issue.message
+                and "approved Change Requests" in issue.message
                 for issue in issues
             )
         )
@@ -974,27 +974,27 @@ class GitChecksTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue.code == "COMMIT_MESSAGE_INVALID"
-                and "CP-02" in issue.message
+                and "CR-02" in issue.message
                 for issue in issues
             )
         )
 
-    def test_custom_proposal_template_exact_current_ids_pass(self) -> None:
-        # Break caught: configured proposal IDs still use the legacy -cpNN- shape.
+    def test_custom_change_request_template_exact_current_ids_pass(self) -> None:
+        # Break caught: configured Change Request IDs still use the legacy shape.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(
                 temp_dir,
-                custom_proposal_template=True,
+                custom_change_request_template=True,
             )
-            current = write_proposal(
+            current = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
                 filename="sample-change-02-additional.md",
             )
-            write_proposal(
+            write_change_request(
                 repo_root,
-                proposal_id="CP-03",
+                change_request_id="CR-03",
                 task_id="M00-T01",
                 filename="sample-change-03-historical.md",
             )
@@ -1002,18 +1002,18 @@ class GitChecksTests(unittest.TestCase):
             content = (
                 plan_path.read_text(encoding="utf-8")
                 .replace(
-                    "- Approved proposals: CP-01",
-                    "- Approved proposals: CP-01, CP-02",
+                    "- Approved Change Requests: CR-01",
+                    "- Approved Change Requests: CR-01, CR-02",
                 )
                 .replace(
-                    f"| `{CUSTOM_CP01.as_posix()}` | Approved proposal |",
-                    f"| `{CUSTOM_CP01.as_posix()}` | Approved proposal |\n"
+                    f"| `{CUSTOM_CR01.as_posix()}` | Approved Change Request |",
+                    f"| `{CUSTOM_CR01.as_posix()}` | Approved Change Request |\n"
                     f"| `{current.relative_to(repo_root).as_posix()}` | "
-                    "Current approved proposal |",
+                    "Current approved Change Request |",
                 )
                 .replace(
-                    "Change-Proposals: CP-01",
-                    "Change-Proposals: CP-01, CP-02",
+                    "Change-Requests: CR-01",
+                    "Change-Requests: CR-01, CR-02",
                 )
             )
             plan_path.write_text(content, encoding="utf-8")
@@ -1033,44 +1033,44 @@ class GitChecksTests(unittest.TestCase):
         self.assertEqual([], issues)
         self.assertEqual(before, after)
 
-    def test_duplicate_current_proposal_id_is_deterministic_evidence_issue(
+    def test_duplicate_current_change_request_id_is_deterministic_evidence_issue(
         self,
     ) -> None:
         # Break caught: duplicate CP IDs become a duplicated trailer requirement.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir)
-            first = write_proposal(
+            first = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
-                filename="sample-cp02-first.md",
+                filename="sample-cr02-first.md",
             )
-            second = write_proposal(
+            second = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T02",
-                filename="sample-cp02-second.md",
+                filename="sample-cr02-second.md",
             )
             plan_path = repo_root / PLAN_RELATIVE
             content = (
                 plan_path.read_text(encoding="utf-8")
                 .replace(
-                    "- Approved proposals: CP-01",
-                    "- Approved proposals: CP-01, CP-02",
+                    "- Approved Change Requests: CR-01",
+                    "- Approved Change Requests: CR-01, CR-02",
                 )
                 .replace(
-                    "| `docs/changes/sample-cp01-traceability.md` | "
-                    "Approved proposal |",
-                    "| `docs/changes/sample-cp01-traceability.md` | "
-                    "Approved proposal |\n"
+                    "| `docs/changes/sample-cr01-traceability.md` | "
+                    "Approved Change Request |",
+                    "| `docs/changes/sample-cr01-traceability.md` | "
+                    "Approved Change Request |\n"
                     f"| `{first.relative_to(repo_root).as_posix()}` | "
-                    "First current proposal |\n"
+                    "First current Change Request |\n"
                     f"| `{second.relative_to(repo_root).as_posix()}` | "
-                    "Second current proposal |",
+                    "Second current Change Request |",
                 )
                 .replace(
-                    "Change-Proposals: CP-01",
-                    "Change-Proposals: CP-01, CP-02",
+                    "Change-Requests: CR-01",
+                    "Change-Requests: CR-01, CR-02",
                 )
             )
             plan_path.write_text(content, encoding="utf-8")
@@ -1089,35 +1089,35 @@ class GitChecksTests(unittest.TestCase):
             issue
             for issue in issues
             if issue.code == "EVIDENCE_INCOMPLETE"
-            and "duplicate approved proposal ID: CP-02" in issue.message
+            and "duplicate approved Change Request ID: CR-02" in issue.message
         ]
         self.assertEqual(1, len(duplicate_issues))
         self.assertFalse(
             any(
                 issue.code == "COMMIT_MESSAGE_INVALID"
-                and "CP-02, CP-02" in issue.message
+                and "CR-02, CR-02" in issue.message
                 for issue in issues
             )
         )
 
-    def test_current_and_historical_duplicate_proposal_id_is_ambiguous(
+    def test_current_and_historical_duplicate_change_request_id_is_ambiguous(
         self,
     ) -> None:
         # Break caught: duplicate IDs are checked only after milestone filtering.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(
                 temp_dir,
-                custom_proposal_template=True,
+                custom_change_request_template=True,
             )
-            current = write_proposal(
+            current = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
                 filename="sample-change-02-current.md",
             )
-            historical = write_proposal(
+            historical = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M00-T01",
                 filename="sample-change-02-historical.md",
             )
@@ -1125,18 +1125,18 @@ class GitChecksTests(unittest.TestCase):
             content = (
                 plan_path.read_text(encoding="utf-8")
                 .replace(
-                    "- Approved proposals: CP-01",
-                    "- Approved proposals: CP-01, CP-02",
+                    "- Approved Change Requests: CR-01",
+                    "- Approved Change Requests: CR-01, CR-02",
                 )
                 .replace(
-                    f"| `{CUSTOM_CP01.as_posix()}` | Approved proposal |",
-                    f"| `{CUSTOM_CP01.as_posix()}` | Approved proposal |\n"
+                    f"| `{CUSTOM_CR01.as_posix()}` | Approved Change Request |",
+                    f"| `{CUSTOM_CR01.as_posix()}` | Approved Change Request |\n"
                     f"| `{current.relative_to(repo_root).as_posix()}` | "
-                    "Current approved proposal |",
+                    "Current approved Change Request |",
                 )
                 .replace(
-                    "Change-Proposals: CP-01",
-                    "Change-Proposals: CP-01, CP-02",
+                    "Change-Requests: CR-01",
+                    "Change-Requests: CR-01, CR-02",
                 )
             )
             plan_path.write_text(content, encoding="utf-8")
@@ -1154,7 +1154,7 @@ class GitChecksTests(unittest.TestCase):
             issue
             for issue in issues
             if issue.code == "EVIDENCE_INCOMPLETE"
-            and "duplicate approved proposal ID: CP-02" in issue.message
+            and "duplicate approved Change Request ID: CR-02" in issue.message
         ]
         self.assertEqual(1, len(duplicates))
         self.assertFalse(
@@ -1168,7 +1168,7 @@ class GitChecksTests(unittest.TestCase):
         self.assertFalse(
             any(
                 issue.code == "COMMIT_MESSAGE_INVALID"
-                and "CP-02, CP-02" in issue.message
+                and "CR-02, CR-02" in issue.message
                 for issue in issues
             )
         )

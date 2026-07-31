@@ -12,7 +12,7 @@ from tests.test_git_checks import (
     PLAN_RELATIVE,
     prepare_repository,
     require_git,
-    write_proposal,
+    write_change_request,
 )
 
 
@@ -101,8 +101,8 @@ class CliBehaviorTests(unittest.TestCase):
             )
             plan_path.write_text(
                 plan_path.read_text(encoding="utf-8").replace(
-                    "- Gate P: Approved",
-                    "- Gate P: Awaiting Approval",
+                    "- Implementation approval: Approved",
+                    "- Implementation approval: Awaiting Approval",
                 ),
                 encoding="utf-8",
             )
@@ -130,7 +130,7 @@ class CliBehaviorTests(unittest.TestCase):
         )
         self.assertTrue(
             any(
-                issue["code"] == "GATE_APPROVAL_MISSING"
+                issue["code"] == "IMPLEMENTATION_APPROVAL_MISSING"
                 and issue["path"]
                 == "docs/plans/sample-m01-contracts.md"
                 for issue in payload["issues"]
@@ -278,17 +278,17 @@ class CliBehaviorTests(unittest.TestCase):
             )
         )
 
-    def test_precommit_malformed_proposal_metadata_is_json_issue(self) -> None:
-        # Break caught: deterministic proposal metadata defects use runtime exit 2.
+    def test_precommit_malformed_request_metadata_is_json_issue(self) -> None:
+        # Break caught: deterministic request metadata defects use runtime exit 2.
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = prepare_repository(temp_dir, initialize_git=False)
-            proposal = write_proposal(
+            change_request = write_change_request(
                 repo_root,
-                proposal_id="CP-02",
+                change_request_id="CR-02",
                 task_id="M01-T01",
             )
-            proposal.write_text(
-                proposal.read_text(encoding="utf-8").replace(
+            change_request.write_text(
+                change_request.read_text(encoding="utf-8").replace(
                     "- Affected tasks: M01-T01",
                     "- Affected tasks:",
                 ),
@@ -311,7 +311,7 @@ class CliBehaviorTests(unittest.TestCase):
         self.assertTrue(
             any(
                 issue["code"] == "EVIDENCE_INCOMPLETE"
-                and issue["path"].endswith(proposal.name)
+                and issue["path"].endswith(change_request.name)
                 for issue in payload["issues"]
             )
         )

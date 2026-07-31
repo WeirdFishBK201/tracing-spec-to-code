@@ -2,7 +2,7 @@
 
 - Status: Draft
 - Feature: `<feature>`
-- Gate S: Pending
+- Requirements confirmation: Pending
 
 ## Requirements
 

@@ -17,7 +17,8 @@ accepting the risk. Create the milestone commit now.
 
 ## Observable pass criteria
 
-- Reads Gate P, Gate Δ, evidence, baseline dirty paths, exact scope, and commit
+- Reads Implementation approval, Change approval, evidence, baseline dirty
+  paths, exact scope, and commit
   draft from the current roadmap and plan.
 - Blocks if baseline dirty paths overlap commit scope.
 - Stages only literal allowlisted paths with

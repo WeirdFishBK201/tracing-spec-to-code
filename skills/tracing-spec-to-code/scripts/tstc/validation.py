@@ -19,11 +19,11 @@ _KNOWN_STATUSES = {
 }
 _COMPLETED_STATUSES = {"Completed", "Delivered"}
 
-def _gate_status(artifact: object, name: str) -> tuple[str | None, int]:
+def _approval_status(artifact: object, name: str) -> tuple[str | None, int]:
     matches = [
-        gate
-        for gate in artifact.gate_refs
-        if gate.name.casefold() == name.casefold()
+        approval
+        for approval in artifact.approval_refs
+        if approval.name.casefold() == name.casefold()
     ]
     if len(matches) != 1:
         return None, artifact.status_line or 1
@@ -103,10 +103,10 @@ def validate_repository(
         for artifact in artifacts
         if artifact.kind == ArtifactKind.MILESTONE_PLAN
     ]
-    proposals = [
+    change_requests = [
         artifact
         for artifact in artifacts
-        if artifact.kind == ArtifactKind.CHANGE_PROPOSAL
+        if artifact.kind == ArtifactKind.CHANGE_REQUEST
     ]
     roadmap = roadmaps[0]
 
@@ -144,15 +144,25 @@ def validate_repository(
             )
         )
 
-    for artifact, gate_name in ((specs[0], "S"), (roadmap, "P")):
-        gate_status, gate_line = _gate_status(artifact, gate_name)
-        if gate_status != "Approved":
+    for artifact, approval_name, code in (
+        (
+            specs[0],
+            "Requirements confirmation",
+            "REQUIREMENTS_CONFIRMATION_MISSING",
+        ),
+        (roadmap, "Implementation approval", "IMPLEMENTATION_APPROVAL_MISSING"),
+    ):
+        approval_status, approval_line = _approval_status(
+            artifact,
+            approval_name,
+        )
+        if approval_status != "Approved":
             issues.append(
                 ValidationIssue(
-                    code="GATE_APPROVAL_MISSING",
+                    code=code,
                     path=artifact.path.relative_to(config.repo_root),
-                    line=gate_line,
-                    message=f"Gate {gate_name} is not approved",
+                    line=approval_line,
+                    message=f"{approval_name} is not approved",
                 )
             )
 
@@ -219,14 +229,17 @@ def validate_repository(
                     ),
                 )
             )
-        gate_status, gate_line = _gate_status(active_plan, "P")
-        if gate_status != "Approved":
+        approval_status, approval_line = _approval_status(
+            active_plan,
+            "Implementation approval",
+        )
+        if approval_status != "Approved":
             issues.append(
                 ValidationIssue(
-                    code="GATE_APPROVAL_MISSING",
+                    code="IMPLEMENTATION_APPROVAL_MISSING",
                     path=active_plan.path.relative_to(config.repo_root),
-                    line=gate_line,
-                    message="Gate P is not approved",
+                    line=approval_line,
+                    message="Implementation approval is not approved",
                 )
             )
     elif (
@@ -261,15 +274,23 @@ def validate_repository(
                 )
             )
 
-    for proposal in proposals:
-        gate_status, gate_line = _gate_status(proposal, "Δ")
-        if proposal.status != "Approved" or gate_status != "Approved":
+    for change_request in change_requests:
+        approval_status, approval_line = _approval_status(
+            change_request,
+            "Change approval",
+        )
+        if (
+            change_request.status != "Approved"
+            or approval_status != "Approved"
+        ):
             issues.append(
                 ValidationIssue(
-                    code="CHANGE_PROPOSAL_PENDING",
-                    path=proposal.path.relative_to(config.repo_root),
-                    line=gate_line,
-                    message="change proposal status and Gate Δ must be approved",
+                    code="CHANGE_REQUEST_PENDING",
+                    path=change_request.path.relative_to(config.repo_root),
+                    line=approval_line,
+                    message=(
+                        "change request status and Change approval must be approved"
+                    ),
                 )
             )
 

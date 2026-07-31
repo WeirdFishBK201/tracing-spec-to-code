@@ -5,9 +5,9 @@
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
 - Design: `docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md`
-- Change proposals: `docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md`, `docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md`, `docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md`, `docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md`
+- Change Requests: `docs/changes/tracing-spec-to-code-cr05-defer-npx-distribution.md`, `docs/changes/tracing-spec-to-code-cr06-safe-publication-semantics.md`, `docs/changes/tracing-spec-to-code-cr07-ownership-aware-staging.md`, `docs/changes/tracing-spec-to-code-cr08-cooperative-filesystem-threat-model.md`
 - Requirements: REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
-- Gate P: Approved on 2026-07-30
+- Implementation approval: Approved on 2026-07-30
 
 **Goal:** Build a zero-third-party-dependency local installer that safely copies the canonical Skill to the approved Level 1/2 client layouts and verifies every copy in isolated temporary roots.
 
@@ -37,7 +37,7 @@
 - Create `tests/test_distribution.py`: registry, manifest, path, matrix, collision, and rollback tests.
 - Create `tests/test_install_cli.py`: subprocess CLI contract tests.
 - Modify `README.md`: local install usage, client levels, safety boundaries, and verification.
-- Modify the design, CP-05/CP-06/CP-07/CP-08, this plan, and the roadmap only for delivery evidence, exact scope, and Gate state.
+- Modify the design, CR-05/CR-06/CR-07/CR-08, this plan, and the roadmap only for delivery evidence, exact scope, and approval state.
 
 ## Interfaces and compatibility matrix
 
@@ -68,7 +68,7 @@ Registry mappings use these stable IDs and relative roots:
 | `windsurf` | 2 | `.windsurf/skills` | `.codeium/windsurf/skills` | `structure-smoke` |
 | `cline` | 2 | `.cline/skills` | `.cline/skills` | `structure-smoke` |
 
-The final target appends `tracing-spec-to-code/`. M04 proves safe local layout and byte-for-byte content; M05 proves actual runtime discovery. Any mapping correction discovered during implementation requires Gate Δ because it changes this approved contract.
+The final target appends `tracing-spec-to-code/`. M04 proves safe local layout and byte-for-byte content; M05 proves actual runtime discovery. Any mapping correction discovered during implementation requires Change approval because it changes this approved contract.
 
 Stable policy error codes: `REGISTRY_INVALID`, `SOURCE_INVALID`, `TARGET_INVALID`, `TARGET_EXISTS`, `COPY_FAILED`, `VERIFY_FAILED`. CLI exits `0` on verified install, `1` for these policy errors, and `2` for argument or unexpected runtime errors.
 
@@ -114,16 +114,16 @@ Stable policy error codes: `REGISTRY_INVALID`, `SOURCE_INVALID`, `TARGET_INVALID
 
 **Requirements:** REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016.
 
-**Files:** Modify `README.md`, the M04 design, CP-05/CP-06/CP-07/CP-08, this plan, and the roadmap; include exact implementation, tests, and governance evidence in final scope.
+**Files:** Modify `README.md`, the M04 design, CR-05/CR-06/CR-07/CR-08, this plan, and the roadmap; include exact implementation, tests, and governance evidence in final scope.
 
-**Consumes:** Approved M04 design, CP-05/CP-06/CP-07/CP-08, completed T01/T02 interfaces and review findings.
+**Consumes:** Approved M04 design, CR-05/CR-06/CR-07/CR-08, completed T01/T02 interfaces and review findings.
 
 **Produces:** Documented local commands, completed evidence tables, M05 awaiting handoff, and one verified M04 commit with no remote mutation.
 
 - [x] Document requirements, both CLI forms, the eight-client support levels, explicit-root behavior, collision refusal, exit codes, offline boundary, test commands, and that `npx`/GitHub remote validation is a post-M05 long-term goal.
 - [x] Run the targeted suite and full suite, valid fixture validation, repository self-validation, Skill structure validation, isolation scan, `git diff --check`, and `git status --short`; use the approved existing `.venv`, which contains PyYAML, without installing dependencies.
 - [x] Dispatch separate read-only spec and code-quality reviews over the complete M04 diff; fix all blocking findings and rerun affected plus full verification.
-- [x] Record actual RED/GREEN, matrix counts, reviews, deviations, CP-05, baseline dirty paths, command results, commit scope, and commit draft in this plan; mark roadmap M04 delivered and awaiting M05 only after evidence is complete.
+- [x] Record actual RED/GREEN, matrix counts, reviews, deviations, CR-05, baseline dirty paths, command results, commit scope, and commit draft in this plan; mark roadmap M04 delivered and awaiting M05 only after evidence is complete.
 - [x] Prepare the exact stage/commit scope, read-only precommit command, required trailers, and post-commit HEAD/status checks; the approved commit sequence runs only after this evidence is staged.
 
 ## Milestone verification
@@ -139,16 +139,16 @@ git diff --check
 git status --short
 ```
 
-Expected observable result: all local tests and validators pass; 16 install combinations match canonical; failure tests preserve unrelated content; isolation scan is empty; post-CP-05 implementation uses no network or real client directory and performs no remote mutation.
+Expected observable result: all local tests and validators pass; 16 install combinations match canonical; failure tests preserve unrelated content; isolation scan is empty; post-CR-05 implementation uses no network or real client directory and performs no remote mutation.
 
-## Risks and Gate P decisions
+## Risks and Implementation approval decisions
 
 - Client path mappings are structural M04 contracts; live discovery remains M05 evidence.
 - Windows path validation must reject both POSIX and drive/backslash escape forms before joining.
 - Staging is a target sibling; publication exclusively claims an absent target and refuses raced entries rather than using overwrite-capable directory rename.
-- Python path-based creation has a create-to-first-pin identity window. M04 supports a cooperative filesystem and preserves identity-mismatched replacements only after ownership was first recorded; native handle-relative hardening is a future proposal.
+- Python path-based creation has a create-to-first-pin identity window. M04 supports a cooperative filesystem and preserves identity-mismatched replacements only after ownership was first recorded; native handle-relative hardening is a future request.
 - The repository `.venv` provides PyYAML, so Skill structure validation runs without dependency installation.
-- Gate P approval authorizes only M04-T01 through M04-T03 and the listed files; it does not authorize `npx`, network, dependency installation, GitHub access, or push.
+- Implementation approval approval authorizes only M04-T01 through M04-T03 and the listed files; it does not authorize `npx`, network, dependency installation, GitHub access, or push.
 
 ## Traceability
 
@@ -156,7 +156,7 @@ Expected observable result: all local tests and validators pass; 16 install comb
 |---|---|---|---|
 | `M04-T01` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `.gitignore, tools/__init__.py, tools/clients.json, tools/distribution.py` | `tests/test_distribution.py` |
 | `M04-T02` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `tools/distribution.py, tools/install.py` | `tests/test_distribution.py, tests/test_install_cli.py` |
-| `M04-T03` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `README.md, docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md, docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md, docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md, docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md, docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md, docs/plans/tracing-spec-to-code-m04-client-distribution.md, docs/plans/tracing-spec-to-code-roadmap.md` | `tests/test_distribution.py, tests/test_install_cli.py` |
+| `M04-T03` | `REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016` | `README.md, docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md, docs/changes/tracing-spec-to-code-cr05-defer-npx-distribution.md, docs/changes/tracing-spec-to-code-cr06-safe-publication-semantics.md, docs/changes/tracing-spec-to-code-cr07-ownership-aware-staging.md, docs/changes/tracing-spec-to-code-cr08-cooperative-filesystem-threat-model.md, docs/plans/tracing-spec-to-code-m04-client-distribution.md, docs/plans/tracing-spec-to-code-roadmap.md` | `tests/test_distribution.py, tests/test_install_cli.py` |
 
 ## Evidence and commit
 
@@ -168,8 +168,8 @@ Expected observable result: all local tests and validators pass; 16 install comb
 | `M04-T02` | `Completed` | `36/36 PASS` |
 | `M04-T03` | `Completed` | `milestone-gates: PASS` |
 
-- Approved proposals: CP-05, CP-06, CP-07, CP-08
-- Deviations: CP-06 approves exclusive absent-target claim, no-overwrite child publication, brief pre-success target visibility, and `SKILL.md`-last mitigation instead of overwrite-capable directory rename. CP-07 aligns staging with the same identity-recording exclusive ownership model. CP-08 documents the standard-library create-to-first-pin limit and narrows M04 to a cooperative filesystem; native handle-relative protection is future work. CP-05/CP-06/CP-07/CP-08 join the scope because M03 precommit requires proposals affecting current tasks to be staged.
+- Approved requests: CR-05, CR-06, CR-07, CR-08
+- Deviations: CR-06 approves exclusive absent-target claim, no-overwrite child publication, brief pre-success target visibility, and `SKILL.md`-last mitigation instead of overwrite-capable directory rename. CR-07 aligns staging with the same identity-recording exclusive ownership model. CR-08 documents the standard-library create-to-first-pin limit and narrows M04 to a cooperative filesystem; native handle-relative protection is future work. CR-05/CR-06/CR-07/CR-08 join the scope because M03 precommit requires requests affecting current tasks to be staged.
 - Baseline dirty paths: None
 
 ### Verification
@@ -186,7 +186,7 @@ Expected observable result: all local tests and validators pass; 16 install comb
 | Reviews | `independent M04 spec and code-quality reviews` | No blockers | `PASS` | `PASS` |
 | Diff | `git diff --check` | No errors | `PASS` | `PASS` |
 
-The four skips are Windows limitations: no FIFO, no file/directory symlink privilege, and a dependent target-symlink case. Junction tests pass. After CP-05, implementation/verification used no network, dependency install, or real client root; M04 performed no GitHub mutation or push.
+The four skips are Windows limitations: no FIFO, no file/directory symlink privilege, and a dependent target-symlink case. Junction tests pass. After CR-05, implementation/verification used no network, dependency install, or real client root; M04 performed no GitHub mutation or push.
 
 ### Commit scope
 
@@ -194,11 +194,11 @@ The four skips are Windows limitations: no FIFO, no file/directory symlink privi
 |---|---|
 | `.gitignore` | Exclude Python runtime caches from repository state |
 | `README.md` | Document offline local installation and boundaries |
-| `docs/changes/tracing-spec-to-code-cp05-defer-npx-distribution.md` | Record the approved scope delta and implementation outcome |
-| `docs/changes/tracing-spec-to-code-cp06-safe-publication-semantics.md` | Approve and record safe publication semantics |
-| `docs/changes/tracing-spec-to-code-cp07-ownership-aware-staging.md` | Approve and record ownership-aware staging |
-| `docs/changes/tracing-spec-to-code-cp08-cooperative-filesystem-threat-model.md` | Record the approved cooperative filesystem boundary |
-| `docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md` | Align authoritative publication and threat-model design with CP-06/CP-08 |
+| `docs/changes/tracing-spec-to-code-cr05-defer-npx-distribution.md` | Record the approved scope delta and implementation outcome |
+| `docs/changes/tracing-spec-to-code-cr06-safe-publication-semantics.md` | Approve and record safe publication semantics |
+| `docs/changes/tracing-spec-to-code-cr07-ownership-aware-staging.md` | Approve and record ownership-aware staging |
+| `docs/changes/tracing-spec-to-code-cr08-cooperative-filesystem-threat-model.md` | Record the approved cooperative filesystem boundary |
+| `docs/design/2026-07-30-tracing-spec-to-code-m04-client-distribution-design.md` | Align authoritative publication and threat-model design with CR-06/CR-08 |
 | `docs/plans/tracing-spec-to-code-m04-client-distribution.md` | Persist M04 execution evidence and commit facts |
 | `docs/plans/tracing-spec-to-code-roadmap.md` | Preserve M04 as current through its implementation commit |
 | `tests/test_distribution.py` | Verify registry, paths, manifests, matrix, races, and cleanup |
@@ -215,5 +215,5 @@ feat(distribution): add safe local skill installer
 
 Milestone: M04 Client distribution
 Requirements: REQ-TS2C-013, REQ-TS2C-014, REQ-TS2C-016
-Change-Proposals: CP-05, CP-06, CP-07, CP-08
+Change-Requests: CR-05, CR-06, CR-07, CR-08
 ```

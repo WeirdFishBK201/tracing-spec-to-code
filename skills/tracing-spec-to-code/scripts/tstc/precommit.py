@@ -28,7 +28,7 @@ class PrecommitRuntimeError(Exception):
         super().__init__(message)
 
 
-class _ProposalMetadataError(Exception):
+class _ChangeRequestMetadataError(Exception):
     def __init__(self, line: int, message: str) -> None:
         self.line = line
         self.message = message
@@ -74,7 +74,7 @@ def _parse_affected_tasks(path: Path) -> tuple[str, ...]:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeError) as error:
         raise PrecommitRuntimeError(
-            f"cannot read approved proposal metadata: {path}: {error}"
+            f"cannot read approved change_request metadata: {path}: {error}"
         ) from error
 
     values: list[tuple[int, str]] = []
@@ -106,58 +106,58 @@ def _parse_affected_tasks(path: Path) -> tuple[str, ...]:
             values.append((line_number, field.group(1).strip()))
 
     if len(values) != 1 or not values[0][1]:
-        raise _ProposalMetadataError(
+        raise _ChangeRequestMetadataError(
             values[0][0] if values else 1,
-            "approved proposal must contain exactly one non-empty "
+            "approved change_request must contain exactly one non-empty "
             "Affected tasks metadata field",
         )
     line_number, value = values[0]
     raw_tasks = re.split(r"[,，]", value)
     if not raw_tasks or any(not value.strip() for value in raw_tasks):
-        raise _ProposalMetadataError(
+        raise _ChangeRequestMetadataError(
             line_number,
-            "approved proposal has invalid Affected tasks metadata",
+            "approved change_request has invalid Affected tasks metadata",
         )
     tasks = tuple(value.strip().upper() for value in raw_tasks)
     if (
         any(_TASK_ID.fullmatch(task) is None for task in tasks)
         or len(set(tasks)) != len(tasks)
     ):
-        raise _ProposalMetadataError(
+        raise _ChangeRequestMetadataError(
             line_number,
-            "approved proposal has invalid Affected tasks metadata",
+            "approved change_request has invalid Affected tasks metadata",
         )
     return tuple(sorted(tasks))
 
 
-def _proposal_id_from_filename(
+def _change_request_id_from_filename(
     filename_template: str,
     feature_slug: str,
     filename: str,
 ) -> str:
     parts: list[str] = []
-    captured_proposal = False
+    captured_change_request = False
     for literal, field_name, _, _ in Formatter().parse(filename_template):
         parts.append(re.escape(literal))
         if field_name is None:
             continue
         if field_name == "feature":
             parts.append(re.escape(feature_slug))
-        elif field_name == "proposal":
-            if captured_proposal:
-                parts.append(r"(?P=proposal)")
+        elif field_name == "change_request":
+            if captured_change_request:
+                parts.append(r"(?P=change_request)")
             else:
-                parts.append(r"(?P<proposal>\d{2})")
-                captured_proposal = True
-        elif field_name == "proposal_slug":
+                parts.append(r"(?P<change_request>\d{2})")
+                captured_change_request = True
+        elif field_name == "change_request_slug":
             parts.append(r"[A-Za-z0-9][A-Za-z0-9-]*")
     match = re.fullmatch("".join(parts), filename)
-    if match is None or not captured_proposal:
+    if match is None or not captured_change_request:
         raise PrecommitRuntimeError(
-            "cannot derive proposal ID from configured filename template: "
+            "cannot derive change_request ID from configured filename template: "
             f"{filename}"
         )
-    return f"CP-{int(match.group('proposal')):02d}"
+    return f"CR-{int(match.group('change_request')):02d}"
 
 
 def validate_precommit(
@@ -215,31 +215,32 @@ def validate_precommit(
     approved_candidates = [
         artifact
         for artifact in artifacts
-        if artifact.kind == ArtifactKind.CHANGE_PROPOSAL
+        if artifact.kind == ArtifactKind.CHANGE_REQUEST
         and artifact.status == "Approved"
         and any(
-            gate.name.casefold() == "δ" and gate.status == "Approved"
-            for gate in artifact.gate_refs
+            approval.name.casefold() == "change approval"
+            and approval.status == "Approved"
+            for approval in artifact.approval_refs
         )
     ]
     issues = list(repository_issues)
     candidate_pairs = [
         (
             artifact,
-            _proposal_id_from_filename(
-                config.change_proposal_filename_template,
+            _change_request_id_from_filename(
+                config.change_request_filename_template,
                 config.feature_slug,
                 artifact.path.name,
             ),
         )
         for artifact in approved_candidates
     ]
-    candidate_ids = [proposal_id for _, proposal_id in candidate_pairs]
+    candidate_ids = [change_request_id for _, change_request_id in candidate_pairs]
     candidate_id_counts = {
-        proposal_id: candidate_ids.count(proposal_id)
-        for proposal_id in candidate_ids
+        change_request_id: candidate_ids.count(change_request_id)
+        for change_request_id in candidate_ids
     }
-    for proposal_id in sorted(
+    for change_request_id in sorted(
         value
         for value, count in candidate_id_counts.items()
         if count > 1
@@ -247,23 +248,23 @@ def validate_precommit(
         duplicate_artifact = next(
             artifact
             for artifact, value in candidate_pairs
-            if value == proposal_id
+            if value == change_request_id
         )
         issues.append(
             ValidationIssue(
                 code="EVIDENCE_INCOMPLETE",
                 path=duplicate_artifact.path.relative_to(root),
                 line=1,
-                message=f"duplicate approved proposal ID: {proposal_id}",
+                message=f"duplicate approved Change Request ID: {change_request_id}",
             )
         )
 
     parsed_candidates = []
     metadata_invalid = False
-    for artifact, proposal_id in candidate_pairs:
+    for artifact, change_request_id in candidate_pairs:
         try:
             affected_tasks = _parse_affected_tasks(artifact.path)
-        except _ProposalMetadataError as error:
+        except _ChangeRequestMetadataError as error:
             metadata_invalid = True
             issues.append(
                 ValidationIssue(
@@ -274,7 +275,7 @@ def validate_precommit(
                 )
             )
             continue
-        parsed_candidates.append((artifact, proposal_id, affected_tasks))
+        parsed_candidates.append((artifact, change_request_id, affected_tasks))
     if repository_issues or metadata_invalid:
         unique = {
             (issue.code, issue.path, issue.line, issue.message): issue
@@ -296,13 +297,13 @@ def validate_precommit(
         )
     selected_task_ids = set(known_plan.task_ids)
     approved_pairs = [
-        (artifact, proposal_id)
-        for artifact, proposal_id, affected_tasks in parsed_candidates
+        (artifact, change_request_id)
+        for artifact, change_request_id, affected_tasks in parsed_candidates
         if selected_task_ids.intersection(affected_tasks)
     ]
-    approved_proposals = [artifact for artifact, _ in approved_pairs]
-    proposal_ids = [proposal_id for _, proposal_id in approved_pairs]
-    approved_proposal_ids = tuple(dict.fromkeys(proposal_ids))
+    approved_change_requests = [artifact for artifact, _ in approved_pairs]
+    change_request_ids = [change_request_id for _, change_request_id in approved_pairs]
+    approved_change_request_ids = tuple(dict.fromkeys(change_request_ids))
     try:
         record = parse_evidence(root, requested_plan)
     except (OSError, UnicodeError) as error:
@@ -311,7 +312,7 @@ def validate_precommit(
         ) from error
 
     issues.extend(
-        validate_evidence(record, known_plan, approved_proposal_ids)
+        validate_evidence(record, known_plan, approved_change_request_ids)
     )
     required_scope_paths: dict[str, str] = {}
 
@@ -327,7 +328,7 @@ def validate_precommit(
     for artifact in artifacts:
         if artifact.kind == ArtifactKind.ROADMAP:
             require_scope_path(artifact.path.relative_to(root).as_posix())
-    for artifact in approved_proposals:
+    for artifact in approved_change_requests:
         require_scope_path(artifact.path.relative_to(root).as_posix())
     for row in record.traceability:
         for value in row.implementation:
@@ -411,7 +412,7 @@ def validate_precommit(
         validate_commit_message(
             replace(
                 record,
-                approved_proposals=approved_proposal_ids,
+                approved_change_requests=approved_change_request_ids,
             )
         )
     )

@@ -38,8 +38,8 @@ class LoadConfigTests(unittest.TestCase):
                 config.milestone_plan_filename_template,
             )
             self.assertEqual(
-                "{feature}-cp{proposal}-{proposal_slug}.md",
-                config.change_proposal_filename_template,
+                "{feature}-cr{change_request}-{change_request_slug}.md",
+                config.change_request_filename_template,
             )
 
     def test_valid_config_overrides_directories_slug_and_templates(self) -> None:
@@ -55,8 +55,8 @@ class LoadConfigTests(unittest.TestCase):
                 "milestone_plan_filename_template": (
                     "m{milestone}-{feature}-{milestone_slug}.md"
                 ),
-                "change_proposal_filename_template": (
-                    "cp{proposal}-{feature}-{proposal_slug}.md"
+                "change_request_filename_template": (
+                    "cr{change_request}-{feature}-{change_request_slug}.md"
                 ),
             }
             (repo_root / ".tracing-spec-to-code.json").write_text(
@@ -80,8 +80,8 @@ class LoadConfigTests(unittest.TestCase):
                 config.milestone_plan_filename_template,
             )
             self.assertEqual(
-                "cp{proposal}-{feature}-{proposal_slug}.md",
-                config.change_proposal_filename_template,
+                "cr{change_request}-{feature}-{change_request_slug}.md",
+                config.change_request_filename_template,
             )
 
     def test_invalid_json_reports_stable_config_error(self) -> None:
@@ -128,6 +128,31 @@ class LoadConfigTests(unittest.TestCase):
             self.assertEqual("CFG_UNKNOWN_KEY", raised.exception.code)
             self.assertEqual(config_path, raised.exception.path)
             self.assertIn("unexpected", raised.exception.message)
+
+    def test_change_request_config_key_is_not_a_compatibility_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir).resolve()
+            config_path = repo_root / ".tracing-spec-to-code.json"
+            old_key = "change_" + "proposal_filename_template"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        old_key: (
+                            "{feature}-cp{request}-{request_slug}.md"
+                        )
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(ConfigError) as raised:
+                load_config(repo_root)
+
+            self.assertEqual("CFG_UNKNOWN_KEY", raised.exception.code)
+            self.assertIn(
+                old_key,
+                raised.exception.message,
+            )
 
     def test_directory_override_must_stay_inside_repository(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -178,9 +203,9 @@ class LoadConfigTests(unittest.TestCase):
                         "{feature}-m{milestone}.md"
                     ),
                 },
-                "incomplete proposal template": {
-                    "change_proposal_filename_template": (
-                        "{feature}-cp{proposal}.md"
+                "incomplete change request template": {
+                    "change_request_filename_template": (
+                        "{feature}-cr{change_request}.md"
                     ),
                 },
             }

@@ -1,11 +1,11 @@
 # <Feature> M01 <Milestone name> Plan
 
-- Status: Draft — Awaiting Gate P
+- Status: Draft — Awaiting implementation approval
 - Milestone: M01 — <Milestone name>
 - Spec: `docs/specs/<feature>-spec.md`
 - Roadmap: `docs/plans/<feature>-roadmap.md`
 - Requirements: REQ-<FEATURE>-001
-- Gate P: Pending
+- Implementation approval: Pending
 
 ## Goal
 
@@ -49,7 +49,7 @@
 | `M01-T01` | Pending | Pending |
 | `M01-T02` | Pending | Pending |
 
-- Approved proposals: None
+- Approved Change Requests: None
 - Deviations: None
 - Baseline dirty paths: None
 

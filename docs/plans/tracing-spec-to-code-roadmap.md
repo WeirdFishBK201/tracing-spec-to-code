@@ -1,42 +1,51 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：Completed — M05 Evaluation and release
-- Spec：`docs/specs/tracing-spec-to-code-spec.md`
-- Gate S：Approved on 2026-07-29
-- Gate P：Approved — M01 through M05 on 2026-07-30
-- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30；CP-09, CP-10, CP-11, and CP-12 Approved on 2026-07-31
-- Current milestone：M05
-- 当前详细计划：`docs/plans/tracing-spec-to-code-m05-evaluation-release.md`
-- M05 design：`docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
+- Status: In Progress — M06 planning
+- Spec: `docs/specs/tracing-spec-to-code-spec.md`
+- Requirements confirmation: Approved on 2026-07-29
+- Implementation approval: Approved on 2026-07-31
+- Change approval: CR-01 through CR-08 approved on 2026-07-30; CR-09 through CR-12 approved on 2026-07-31
+- Current milestone: M06
+- Current detailed plan: `docs/plans/tracing-spec-to-code-m06-readable-localized-terminology.md`
+- M06 design: `docs/superpowers/specs/2026-07-31-readable-localized-workflow-terminology-design.md`
 
-## 规则
+## Rules
 
-- Roadmap 只记录 milestone outcome、依赖、requirements 和 verification gate。
-- 只为下一个 milestone 维护详细 plan。
-- 每个 milestone 独立可运行、可验证。
-- 每个 milestone 完成后自动创建一个 commit，并停止等待下一步批准。
-- REQ-TS2C-016 是所有 milestone 的全局隔离约束。
+- The roadmap records only milestone outcomes, dependencies, requirements, and
+  verification gates.
+- Maintain a detailed plan only for the next milestone.
+- Every milestone leaves the repository runnable and independently verifiable.
+- After completing a milestone, create one scoped commit and stop for the next
+  approval.
+- REQ-TS2C-016 is the global isolation constraint for every milestone.
 
 ## Milestones
 
 | Milestone | Outcome | Primary requirements | Dependencies | Verification gate |
-|---|---|---|---|---|
-| M01 — Artifact contracts | 一个可运行的零第三方依赖 validator 能解析配置、识别 artifacts，并检查 ID 与结构追溯 | REQ-TS2C-001, REQ-TS2C-002 | Gate S | Unit tests、CLI behavior tests、template validation、skill structure check |
-| M02 — Workflow core | Skill 能执行 Gate S/P/Δ、当前 milestone 限制、受限上下文和自适应测试决策 | REQ-TS2C-003–009 | M01 | Pressure scenarios、workflow fixtures、behavior tests |
-| M03 — Evidence and commit | Skill 能验证 evidence、隔离 stage 范围并安全创建 milestone commit | REQ-TS2C-010–012 | M02 | Temporary Git repo integration tests、failure-path tests |
-| M04 — Client distribution | Canonical skill 可通过 registry installer 分发到 Level 1/2 客户端 | REQ-TS2C-013–014 | M03 | 8×2 installer matrix、完整内容/结构校验、Level 1/2 mapping contract |
-| M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、candidate clean-clone release verification；CP-12 administratively waives recorded Level 1/2 results without claiming PASS |
+| --- | --- | --- | --- | --- |
+| M01 — Artifact contracts | A runnable zero-third-party-dependency validator parses configuration, discovers artifacts, and checks ID and structural traceability | REQ-TS2C-001, REQ-TS2C-002 | Requirements confirmation | Unit tests, CLI behavior tests, template validation, Skill structure check |
+| M02 — Workflow core | The Skill enforces confirmation and approval states, current-milestone scope, constrained context, and adaptive test decisions | REQ-TS2C-003–009 | M01 | Pressure scenarios, workflow fixtures, behavior tests |
+| M03 — Evidence and commit | The Skill validates evidence, isolates staged scope, and safely creates a milestone commit | REQ-TS2C-010–012 | M02 | Temporary Git repository integration tests, failure-path tests |
+| M04 — Client distribution | The canonical Skill can be distributed to Level 1 and Level 2 clients through the registry installer | REQ-TS2C-013–014 | M03 | 8×2 installer matrix, complete content and structure validation, Level 1/2 mapping contract |
+| M05 — Evaluation and release | Baseline, pressure-scenario, wording, and release checks produce reproducible evidence | REQ-TS2C-015 | M04 | Baseline/loaded comparison, five-run wording checks, candidate clean-clone release verification; CR-12 administratively waives recorded Level 1/2 results without claiming PASS |
+| M06 — Readable localized terminology | The current tree uses one descriptive English workflow contract and user prompts select English or Simplified Chinese from the latest user message | REQ-TS2C-017 | M05, approved M06 design | Canonical-contract tests, bilingual prompt-policy tests, migrated evidence integrity, tracked-tree vocabulary scan, full local suite |
 
-## Long-term goals
+## Long-Term Goals
 
-- npx 与远程分发：M05 之后再提案立项；从公开 GitHub source 安装，在隔离环境验证固定 CLI 版本、project/user scope、远程与 canonical 内容一致性及 clean-environment 行为。
-- 该目标不属于 M04 Gate P，不授权网络访问、依赖下载、GitHub mutation 或 push。
-- Native handle 安全强化：另行提案评估 Windows/POSIX handle-relative API，覆盖 path creation 到首次 identity capture 的恶意并发 replacement；不属于 M04。
+- Remote package distribution requires a separately approved Change Request
+  after M06. It must install from a public GitHub source and verify a pinned CLI
+  version, project/user scope, canonical-content equality, and clean-environment
+  behavior.
+- That goal does not authorize network access, dependency downloads, GitHub
+  mutation, or push.
+- Native-handle security hardening requires a separate Change Request to assess
+  Windows and POSIX handle-relative APIs against malicious replacement between
+  path creation and first identity capture.
 
-## Requirement coverage
+## Requirement Coverage
 
 | Requirement | Planned milestone |
-|---|---|
+| --- | --- |
 | REQ-TS2C-001 | M01 |
 | REQ-TS2C-002 | M01 |
 | REQ-TS2C-003 | M02 |
@@ -52,8 +61,22 @@
 | REQ-TS2C-013 | M04 |
 | REQ-TS2C-014 | M04 |
 | REQ-TS2C-015 | M05 |
-| REQ-TS2C-016 | M01–M05 |
+| REQ-TS2C-016 | M01–M06 |
+| REQ-TS2C-017 | M06 |
 
-## Gate P
+## Implementation Approval
 
-M01–M05 已交付。M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`，M05 implementation commit 为 `95f4c36a8af1581f307ba9e6186236f7e15d04e7`。CP-09 的 16 次独立 Codex rerun、CP-10 deterministic contract、五次 fresh rebuild、recorded-evidence 独立复审和 M05 clean-clone candidate gate 均已 PASS。CP-11 将八客户端 discovery/smoke 交由用户执行；CP-12 经用户批准后将 M05 和路线图标记为行政完成。仓库没有 `client-*.json`，不得声称 `5/5 + 3/3`，未过滤 evaluation 继续 fail closed，summary 保持 `level1_passed: 0`、`level2_passed: 0`。
+M01–M05 are delivered. The M04 implementation commit is
+`a6ef478aaf927399f9439fecf473845a248e9c3e`, and the M05 implementation commit
+is `95f4c36a8af1581f307ba9e6186236f7e15d04e7`. The independent reruns,
+deterministic wording contract, fresh rebuilds, recorded-evidence review, and
+M05 clean-clone candidate gate passed.
+
+The user owns the eight-client discovery and smoke checks. CR-12
+administratively completed M05 without claiming those client results. The
+repository contains no `client-*.json` evidence, so it must not claim
+`5/5 + 3/3`; unfiltered evaluation remains fail closed with
+`level1_passed: 0` and `level2_passed: 0`.
+
+M06 implementation remains blocked until this detailed plan receives explicit
+Implementation Approval.

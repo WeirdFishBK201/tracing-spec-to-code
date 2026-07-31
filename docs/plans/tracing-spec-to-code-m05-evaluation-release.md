@@ -8,12 +8,12 @@
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
 - Design: `docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
 - Requirements: REQ-TS2C-015, REQ-TS2C-016
-- Gate P: Approved on 2026-07-30
-- Gate Δ: CP-09, CP-10, CP-11, and CP-12 Approved on 2026-07-31
+- Implementation approval: Approved on 2026-07-30
+- Change approval: CR-09, CR-10, CR-11, and CR-12 Approved on 2026-07-31
 
-**Goal:** Produce reproducible Codex behavior and staged-candidate clean-clone evidence without publishing or mutating a remote; CP-12 records administrative completion of the unverified eight-client boundary.
+**Goal:** Produce reproducible Codex behavior and staged-candidate clean-clone evidence without publishing or mutating a remote; CR-12 records administrative completion of the unverified eight-client boundary.
 
-**Architecture:** Reuse `tools/clients.json`, one versioned case file, and one standard-library evaluation CLI. CP-09 archives unchanged schema-v1 evidence and records active schema-v2 reruns; CP-10 adds one exact active-to-active full-group rebuild. Client actions remain manual.
+**Architecture:** Reuse `tools/clients.json`, one versioned case file, and one standard-library evaluation CLI. CR-09 archives unchanged schema-v1 evidence and records active schema-v2 reruns; CR-10 adds one exact active-to-active full-group rebuild. Client actions remain manual.
 
 **Tech Stack:** Python 3.10+ standard library (`argparse`, `dataclasses`, `datetime`, `json`, `pathlib`, `re`, `secrets`, `unittest`), existing local Git, and explicitly approved client CLIs/GUI sessions.
 
@@ -24,7 +24,7 @@
 - Never write a real home/client root; use isolated project roots and synthetic repository fixtures.
 - Store only reviewed evidence with no secrets, real-home paths, repository-external paths, `VGCCoach2`, or legacy `agentic-workflow` content.
 - Reuse `tools/clients.json`; do not create another client registry, adapter framework, or persisted summary.
-- Preserve the 16 schema-v1 records byte-for-byte under `evaluation/archive/cp09/`; no general supersession graph.
+- Preserve the 16 schema-v1 records byte-for-byte under `evaluation/archive/cr09/`; no general supersession graph.
 - Use TDD for deterministic code. Create one M05 milestone commit only after every gate passes; do not make per-task implementation commits or push.
 
 ## File map and contracts
@@ -33,14 +33,14 @@
 - Create `evaluation/README.md`: exact prompt execution, rationale review, client runbook, evidence recording, and approval boundaries.
 - Create `tools/evaluate.py`: `prepare`, `record`, `validate`, and `summary` commands.
 - Create `tests/test_evaluation.py`: case/evidence/CLI/summary and candidate-snapshot integration tests.
-- Commit the 37 exact active/archive JSON files listed under Commit scope; optional reruns require another Gate Δ.
-- Create the approved CP-09, CP-10, and CP-11 documents under `docs/changes/`.
+- Commit the 37 exact active/archive JSON files listed under Commit scope; optional reruns require another Change approval.
+- Create the approved CR-09, CR-10, and CR-11 documents under `docs/changes/`.
 - Modify `.gitignore`, `README.md`, `evaluation/README.md`, this plan, and the roadmap for local runtime hygiene, user commands, actual evidence, final status, and commit facts.
 Library contracts in `tools/evaluate.py`:
 
 ```text
 CaseSpec(id, scenario_id, run_type, prompt, skill_loaded, expected_decision, pressures, variant_group, decision_options, response_contract, document_schema_version)
-EvidenceRecord(schema_version, run_id, case_id, client_id, skill_loaded, client_version, model, config, runtime_surface, attempt_id, prepared_at, session_ref, recorded_at, prompt, actual_decision, verbatim_rationale, outcome, reason, notes, rationale_review, supersedes_run_ids, rerun_of, change_proposal)
+EvidenceRecord(schema_version, run_id, case_id, client_id, skill_loaded, client_version, model, config, runtime_surface, attempt_id, prepared_at, session_ref, recorded_at, prompt, actual_decision, verbatim_rationale, outcome, reason, notes, rationale_review, supersedes_run_ids, rerun_of, change_request)
 EvaluationSummary(baseline_observed, pressure_passed, wording_groups, level1_passed, level2_passed, blocked_runs, failed_runs, open_rationales)
 EvaluationError(code, message, path=None)
 load_cases(path: Path) -> tuple[CaseSpec, ...]
@@ -60,23 +60,23 @@ Stable policy codes: `CASE_INVALID`, `RUN_EXISTS`, `EVIDENCE_INVALID`, `SENSITIV
 **Files/contracts:** Modify `evaluation/cases.json`, `evaluation/README.md`, `tools/evaluate.py`, and `tests/test_evaluation.py`; preserve the CLI commands and stable codes above.
 
 - [x] Build and review schema-v1 case/evidence/CLI/summary contracts; 30 targeted and 210 full tests passed with four Windows skips.
-- [x] Add RED tests for duplicate execution identity, time ordering, placeholder environment values, baseline/loaded mismatch, behavioral wording contracts, archive exclusion, invalid `rerun_of`, and missing/mixed CP-09 provenance.
-- [x] Extend `prepare`/`record` with schema-v2 execution metadata and exact CP-09 rerun fields; keep exclusive writes and sensitive-content checks.
+- [x] Add RED tests for duplicate execution identity, time ordering, placeholder environment values, baseline/loaded mismatch, behavioral wording contracts, archive exclusion, invalid `rerun_of`, and missing/mixed CR-09 provenance.
+- [x] Extend `prepare`/`record` with schema-v2 execution metadata and exact CR-09 rerun fields; keep exclusive writes and sensitive-content checks.
 - [x] Make `validate` require comparable pair environments, five distinct wording sessions, the exact archive set, and only active non-recursive evidence counts.
 - [x] Run targeted/full tests and obtain independent spec and quality reviews before any Codex rerun; 45 targeted and 225 full tests PASS with four Windows skips, reviews PASS.
-- [x] Add the approved CP-10 exact full-group rebuild contract with RED/GREEN tests; preserve CP-09 archive validation and immutable active evidence. 60 targeted and 240 full tests PASS with four Windows skips; independent spec and quality reviews PASS.
+- [x] Add the approved CR-10 exact full-group rebuild contract with RED/GREEN tests; preserve CR-09 archive validation and immutable active evidence. 60 targeted and 240 full tests PASS with four Windows skips; independent spec and quality reviews PASS.
 
 ### M05-T02 — Codex baseline, pressure, and wording evidence
 
-**Objective:** Complete 3 baseline + 3 loaded pressure + 10 effective wording results through immutable CP-09 evidence and the approved CP-10 commit-boundary rebuild.
+**Objective:** Complete 3 baseline + 3 loaded pressure + 10 effective wording results through immutable CR-09 evidence and the approved CR-10 commit-boundary rebuild.
 **Requirements:** REQ-TS2C-015, REQ-TS2C-016.
-**Files/contracts:** Preserve the CP-09 archive and 16 active v2 files; add the exact five CP-10 replacement files named under Commit scope and record exact approved commands in `evaluation/README.md`.
+**Files/contracts:** Preserve the CR-09 archive and 16 active v2 files; add the exact five CR-10 replacement files named under Commit scope and record exact approved commands in `evaluation/README.md`.
 
 - [x] Move all 16 v1 files without content changes, prove archive hashes match, and require the active T02 suite to report incomplete.
-- [x] Capture one exact Codex CLI path/version, explicit model, config snapshot, isolated loaded/unloaded roots, and 16 fresh CP-09 runs with distinct execution identities.
-- [x] Review all CP-09 rationales; retain the immutable `wording-commit-boundary-07` `new-rationale` failure and require deterministic validation to fail closed.
-- [x] Complete the CP-10 deterministic contract and independent reviews before any replacement session.
-- [x] After separate approval, run and review the exact five fresh CP-10 replacements; effective summary reports `3 observed + 3/3 + 5/5 + 5/5`, zero failures, and zero open rationales.
+- [x] Capture one exact Codex CLI path/version, explicit model, config snapshot, isolated loaded/unloaded roots, and 16 fresh CR-09 runs with distinct execution identities.
+- [x] Review all CR-09 rationales; retain the immutable `wording-commit-boundary-07` `new-rationale` failure and require deterministic validation to fail closed.
+- [x] Complete the CR-10 deterministic contract and independent reviews before any replacement session.
+- [x] After separate approval, run and review the exact five fresh CR-10 replacements; effective summary reports `3 observed + 3/3 + 5/5 + 5/5`, zero failures, and zero open rationales.
 
 ### M05-T03 — External-client scope disposition
 
@@ -126,8 +126,8 @@ Expected: deterministic tests/validators PASS; Codex `3 observed + 3/3 + 5/5 + 5
 | Task | Requirements | Implementation | Tests |
 |---|---|---|---|
 | `M05-T01` | `REQ-TS2C-015, REQ-TS2C-016` | `evaluation/cases.json, evaluation/README.md, tools/evaluate.py` | `tests/test_evaluation.py` |
-| `M05-T02` | `REQ-TS2C-015, REQ-TS2C-016` | `skills/tracing-spec-to-code/SKILL.md, evaluation/archive/cp09/baseline-gate-01.json, evaluation/evidence/baseline-gate-02.json, evaluation/evidence/wording-commit-boundary-15.json` | `tests/test_evaluation.py` |
-| `M05-T03` | `REQ-TS2C-015, REQ-TS2C-016` | `README.md, evaluation/README.md, docs/changes/tracing-spec-to-code-cp11-user-owned-client-verification.md, docs/plans/tracing-spec-to-code-m05-evaluation-release.md` | `docs/changes/tracing-spec-to-code-cp11-user-owned-client-verification.md` |
+| `M05-T02` | `REQ-TS2C-015, REQ-TS2C-016` | `skills/tracing-spec-to-code/SKILL.md, evaluation/archive/cr09/baseline-requirements-confirmation-01.json, evaluation/evidence/baseline-requirements-confirmation-02.json, evaluation/evidence/wording-commit-boundary-15.json` | `tests/test_evaluation.py` |
+| `M05-T03` | `REQ-TS2C-015, REQ-TS2C-016` | `README.md, evaluation/README.md, docs/changes/tracing-spec-to-code-cr11-user-owned-client-verification.md, docs/plans/tracing-spec-to-code-m05-evaluation-release.md` | `docs/changes/tracing-spec-to-code-cr11-user-owned-client-verification.md` |
 | `M05-T04` | `REQ-TS2C-015, REQ-TS2C-016` | `.gitignore, README.md, docs/plans/tracing-spec-to-code-m05-evaluation-release.md, docs/plans/tracing-spec-to-code-roadmap.md` | `tests/test_evaluation.py` |
 
 ## Evidence and commit
@@ -136,13 +136,13 @@ Expected: deterministic tests/validators PASS; Codex `3 observed + 3/3 + 5/5 + 5
 
 | Task | Status | Actual verification |
 |---|---|---|
-| `M05-T01` | `Completed` | `cp10-contract: PASS` |
+| `M05-T01` | `Completed` | `cr10-contract: PASS` |
 | `M05-T02` | `Completed` | `recorded-evidence: PASS` |
 | `M05-T03` | `Completed` | `scope-disposition: PASS` |
 | `M05-T04` | `Completed` | `release-candidate: PASS` |
 
-- Approved proposals: CP-09, CP-10, CP-11, CP-12
-- Deviations: v1 T02 evidence failed independent quality review; CP-09 rerun exposed an authority-channel gap requiring the immutable CP-10 full-group rebuild; on 2026-07-31 the user retained ownership of the eight-client live matrix and directed T04 closeout without Codex executing T03, so no client PASS evidence is claimed; `evaluation/.runtime/` is ignored as a non-release local workspace so T04 can retain drafts without polluting final status; CP-12 administratively completes M05 despite the unverified client boundary while preserving the fail-closed evaluation result.
+- Approved requests: CR-09, CR-10, CR-11, CR-12
+- Deviations: v1 T02 evidence failed independent quality review; CR-09 rerun exposed an authority-channel gap requiring the immutable CR-10 full-group rebuild; on 2026-07-31 the user retained ownership of the eight-client live matrix and directed T04 closeout without Codex executing T03, so no client PASS evidence is claimed; `evaluation/.runtime/` is ignored as a non-release local workspace so T04 can retain drafts without polluting final status; CR-12 administratively completes M05 despite the unverified client boundary while preserving the fail-closed evaluation result.
 - Baseline dirty paths: None
 
 ### Verification
@@ -184,7 +184,7 @@ filtered/unfiltered evaluation boundary. Per milestone-commit policy, the
 actual final tree and commit hashes are reported after commit rather than
 written back into the commit that they identify.
 
-Approved CP-12 marks M05 administratively complete. This status does not
+Approved CR-12 marks M05 administratively complete. This status does not
 represent `5/5` Level 1 or `3/3` Level 2 evidence: no client result files exist,
 the summary remains `level1_passed: 0` and `level2_passed: 0`, and unfiltered
 evaluation intentionally remains incomplete.
@@ -202,29 +202,29 @@ evaluation intentionally remains incomplete.
 | `tests/test_evaluation.py` | Verify deterministic evaluation contracts |
 | `docs/plans/tracing-spec-to-code-m05-evaluation-release.md` | Record M05 plan, actual evidence, and commit facts |
 | `docs/plans/tracing-spec-to-code-roadmap.md` | Record final M05 delivery state |
-| `docs/changes/tracing-spec-to-code-cp09-reproducible-evaluation-reruns.md` | Record approved Gate Δ |
-| `docs/changes/tracing-spec-to-code-cp10-authority-channel-wording-rebuild.md` | Record approved authority-channel Gate Δ |
-| `docs/changes/tracing-spec-to-code-cp11-user-owned-client-verification.md` | Record the approved external-client ownership and sequencing Gate Δ |
-| `evaluation/archive/cp09/baseline-gate-01.json` | Preserve v1 gate baseline |
-| `evaluation/archive/cp09/baseline-context-01.json` | Preserve v1 context baseline |
-| `evaluation/archive/cp09/baseline-verification-git-01.json` | Preserve v1 verification/Git baseline |
-| `evaluation/archive/cp09/loaded-gate-01.json` | Preserve v1 gate pressure |
-| `evaluation/archive/cp09/loaded-context-01.json` | Preserve v1 context pressure |
-| `evaluation/archive/cp09/loaded-verification-git-01.json` | Preserve v1 verification/Git pressure |
-| `evaluation/archive/cp09/wording-semantic-scope-01.json` | Preserve v1 semantic run 1 |
-| `evaluation/archive/cp09/wording-semantic-scope-02.json` | Preserve v1 semantic run 2 |
-| `evaluation/archive/cp09/wording-semantic-scope-03.json` | Preserve v1 semantic run 3 |
-| `evaluation/archive/cp09/wording-semantic-scope-04.json` | Preserve v1 semantic run 4 |
-| `evaluation/archive/cp09/wording-semantic-scope-05.json` | Preserve v1 semantic run 5 |
-| `evaluation/archive/cp09/wording-commit-boundary-01.json` | Preserve v1 commit run 1 |
-| `evaluation/archive/cp09/wording-commit-boundary-02.json` | Preserve v1 commit run 2 |
-| `evaluation/archive/cp09/wording-commit-boundary-03.json` | Preserve v1 commit run 3 |
-| `evaluation/archive/cp09/wording-commit-boundary-04.json` | Preserve v1 commit run 4 |
-| `evaluation/archive/cp09/wording-commit-boundary-05.json` | Preserve v1 commit run 5 |
-| `evaluation/evidence/baseline-gate-02.json` | Record v2 gate baseline |
+| `docs/changes/tracing-spec-to-code-cr09-reproducible-evaluation-reruns.md` | Record approved Change approval |
+| `docs/changes/tracing-spec-to-code-cr10-authority-channel-wording-rebuild.md` | Record approved authority-channel Change approval |
+| `docs/changes/tracing-spec-to-code-cr11-user-owned-client-verification.md` | Record the approved external-client ownership and sequencing Change approval |
+| `evaluation/archive/cr09/baseline-requirements-confirmation-01.json` | Preserve v1 gate baseline |
+| `evaluation/archive/cr09/baseline-context-01.json` | Preserve v1 context baseline |
+| `evaluation/archive/cr09/baseline-verification-git-01.json` | Preserve v1 verification/Git baseline |
+| `evaluation/archive/cr09/loaded-requirements-confirmation-01.json` | Preserve v1 gate pressure |
+| `evaluation/archive/cr09/loaded-context-01.json` | Preserve v1 context pressure |
+| `evaluation/archive/cr09/loaded-verification-git-01.json` | Preserve v1 verification/Git pressure |
+| `evaluation/archive/cr09/wording-semantic-scope-01.json` | Preserve v1 semantic run 1 |
+| `evaluation/archive/cr09/wording-semantic-scope-02.json` | Preserve v1 semantic run 2 |
+| `evaluation/archive/cr09/wording-semantic-scope-03.json` | Preserve v1 semantic run 3 |
+| `evaluation/archive/cr09/wording-semantic-scope-04.json` | Preserve v1 semantic run 4 |
+| `evaluation/archive/cr09/wording-semantic-scope-05.json` | Preserve v1 semantic run 5 |
+| `evaluation/archive/cr09/wording-commit-boundary-01.json` | Preserve v1 commit run 1 |
+| `evaluation/archive/cr09/wording-commit-boundary-02.json` | Preserve v1 commit run 2 |
+| `evaluation/archive/cr09/wording-commit-boundary-03.json` | Preserve v1 commit run 3 |
+| `evaluation/archive/cr09/wording-commit-boundary-04.json` | Preserve v1 commit run 4 |
+| `evaluation/archive/cr09/wording-commit-boundary-05.json` | Preserve v1 commit run 5 |
+| `evaluation/evidence/baseline-requirements-confirmation-02.json` | Record v2 gate baseline |
 | `evaluation/evidence/baseline-context-02.json` | Record v2 context baseline |
 | `evaluation/evidence/baseline-verification-git-02.json` | Record v2 verification/Git baseline |
-| `evaluation/evidence/loaded-gate-02.json` | Record v2 gate pressure |
+| `evaluation/evidence/loaded-requirements-confirmation-02.json` | Record v2 gate pressure |
 | `evaluation/evidence/loaded-context-02.json` | Record v2 context pressure |
 | `evaluation/evidence/loaded-verification-git-02.json` | Record v2 verification/Git pressure |
 | `evaluation/evidence/wording-semantic-scope-06.json` | Record v2 semantic run 6 |
@@ -237,14 +237,14 @@ evaluation intentionally remains incomplete.
 | `evaluation/evidence/wording-commit-boundary-08.json` | Record v2 commit run 8 |
 | `evaluation/evidence/wording-commit-boundary-09.json` | Record v2 commit run 9 |
 | `evaluation/evidence/wording-commit-boundary-10.json` | Record v2 commit run 10 |
-| `evaluation/evidence/wording-commit-boundary-11.json` | Replace CP-09 commit run 6 under CP-10 |
-| `evaluation/evidence/wording-commit-boundary-12.json` | Replace CP-09 commit run 7 under CP-10 |
-| `evaluation/evidence/wording-commit-boundary-13.json` | Replace CP-09 commit run 8 under CP-10 |
-| `evaluation/evidence/wording-commit-boundary-14.json` | Replace CP-09 commit run 9 under CP-10 |
-| `evaluation/evidence/wording-commit-boundary-15.json` | Replace CP-09 commit run 10 under CP-10 |
+| `evaluation/evidence/wording-commit-boundary-11.json` | Replace CR-09 commit run 6 under CR-10 |
+| `evaluation/evidence/wording-commit-boundary-12.json` | Replace CR-09 commit run 7 under CR-10 |
+| `evaluation/evidence/wording-commit-boundary-13.json` | Replace CR-09 commit run 8 under CR-10 |
+| `evaluation/evidence/wording-commit-boundary-14.json` | Replace CR-09 commit run 9 under CR-10 |
+| `evaluation/evidence/wording-commit-boundary-15.json` | Replace CR-09 commit run 10 under CR-10 |
 Client results are excluded by the user-owned T03 boundary. Ranges and globs are never passed to Git or precommit.
 
-CP-12 and its administrative fact-source updates occurred after the M05
+CR-12 and its administrative fact-source updates occurred after the M05
 implementation commit. They do not retroactively change the historical 49-file
 commit scope or its approved trailers.
 
@@ -255,5 +255,5 @@ feat(evaluation): add reproducible release evidence
 
 Milestone: M05 Evaluation and release
 Requirements: REQ-TS2C-015, REQ-TS2C-016
-Change-Proposals: CP-09, CP-10, CP-11
+Change-Requests: CR-09, CR-10, CR-11
 ```

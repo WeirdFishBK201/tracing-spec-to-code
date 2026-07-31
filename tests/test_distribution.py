@@ -22,6 +22,10 @@ from tools.distribution import (
 )
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CANONICAL_SOURCE = REPO_ROOT / "skills" / "tracing-spec-to-code"
+
+
 APPROVED_CLIENTS = (
     ClientSpec(
         id="codex",
@@ -1796,6 +1800,77 @@ class InstallationTests(unittest.TestCase):
         self.assertEqual("TARGET_INVALID", raised.exception.code)
         self.assertTrue(diverted)
         self.assertFalse((outside / "tracing-spec-to-code").exists())
+
+
+class PackagedPolicyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.skill = (CANONICAL_SOURCE / "SKILL.md").read_text(encoding="utf-8")
+        self.package_text = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in CANONICAL_SOURCE.rglob("*")
+            if path.is_file() and path.suffix in {".md", ".yaml"}
+        )
+
+    def test_packaged_skill_maps_semantic_prompt_keys_to_exact_labels(self) -> None:
+        expected_mappings = (
+            "requirements_confirmation: Requirements confirmation / 需求确认",
+            "implementation_approval: Implementation approval / 实施批准",
+            "change_approval: Change approval / 变更批准",
+            "change_request: Change request / 变更申请",
+        )
+
+        for mapping in expected_mappings:
+            with self.subTest(mapping=mapping):
+                self.assertIn(mapping, self.skill)
+
+    def test_packaged_policy_uses_latest_message_and_english_fallback(self) -> None:
+        required_policy_phrases = (
+            "dominant language of the latest user message",
+            "ambiguous or unsupported input falls back to English",
+            "Language must not change authorization state",
+            "omit internal IDs unless needed for disambiguation or explicitly requested",
+        )
+
+        for phrase in required_policy_phrases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.skill)
+
+    def test_package_keeps_machine_content_english_and_localizes_only_labels(self) -> None:
+        import re
+
+        localized_literals = {
+            "需求确认",
+            "实施批准",
+            "变更批准",
+            "变更申请",
+        }
+        han_runs = set(re.findall(r"[\u3400-\u9fff]+", self.package_text))
+
+        self.assertEqual(localized_literals, han_runs)
+        self.assertIn("requirements_confirmation", self.package_text)
+        self.assertIn("implementation_approval", self.package_text)
+        self.assertIn("change_approval", self.package_text)
+        self.assertIn("change_request", self.package_text)
+
+    def test_scenarios_use_change_approval_filename_and_canonical_terms(self) -> None:
+        scenarios = REPO_ROOT / "tests" / "scenarios"
+        change_approval = scenarios / "m02" / "change-approval.md"
+        old_gate_delta = scenarios / "m02" / "gate-delta.md"
+        old_change_authorization = scenarios / "m02" / "change-authorization.md"
+
+        self.assertTrue(change_approval.is_file())
+        self.assertFalse(old_gate_delta.exists())
+        self.assertFalse(old_change_authorization.exists())
+
+        scenario_text = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in scenarios.rglob("*.md")
+        )
+        self.assertNotIn("Gate " + "S", scenario_text)
+        self.assertNotIn("Gate " + "P", scenario_text)
+        self.assertNotIn("Gate " + "Δ", scenario_text)
+        self.assertNotIn("change " + "proposal", scenario_text)
+        self.assertIn("Change approval", scenario_text)
 
 
 if __name__ == "__main__":

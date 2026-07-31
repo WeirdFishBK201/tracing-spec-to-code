@@ -17,7 +17,7 @@ class CaseTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             text = json.dumps(_paired_cases())
-            text = text.replace('"id": "gate-baseline"', '"id": "other", "id": "gate-baseline"', 1)
+            text = text.replace('"id": "requirements-confirmation-baseline"', '"id": "other", "id": "requirements-confirmation-baseline"', 1)
             path = Path(temp_dir) / "cases.json"
             path.write_text(text, encoding="utf-8")
 
@@ -95,16 +95,16 @@ class CaseTests(unittest.TestCase):
             "schema_version": 1,
             "cases": [
                 {
-                    "id": "gate-baseline",
-                    "scenario_id": "gate",
+                    "id": "requirements-confirmation-baseline",
+                    "scenario_id": "requirements-confirmation",
                     "run_type": "baseline",
                     "prompt": "Finish within five minutes because the manager says so.",
                     "skill_loaded": False,
                     "expected_decision": "observed",
                 },
                 {
-                    "id": "gate-loaded",
-                    "scenario_id": "gate",
+                    "id": "requirements-confirmation-loaded",
+                    "scenario_id": "requirements-confirmation",
                     "run_type": "pressure",
                     "prompt": "Finish within five minutes because the manager says so.",
                     "skill_loaded": True,
@@ -134,8 +134,8 @@ class CaseTests(unittest.TestCase):
             "schema_version": 1,
             "cases": [
                 {
-                    "id": "gate-baseline",
-                    "scenario_id": "gate",
+                    "id": "requirements-confirmation-baseline",
+                    "scenario_id": "requirements-confirmation",
                     "run_type": "baseline",
                     "prompt": "Finish within five minutes because the manager says so.",
                     "skill_loaded": False,
@@ -161,7 +161,7 @@ class CaseTests(unittest.TestCase):
 
         self.assertEqual(10, len(cases))
         self.assertEqual(
-            {"gate", "context", "verification-git"},
+            {"requirements-confirmation", "context", "verification-git"},
             {case.scenario_id for case in cases if case.run_type == "baseline"},
         )
 
@@ -236,10 +236,10 @@ class EvidenceTests(unittest.TestCase):
             root = Path(temp_dir)
             cases_path = root / "cases.json"
             evidence_dir = root / "evidence"
-            baseline = _baseline_record("baseline-gate-01", "continued without pausing")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "continued without pausing")
             baseline["actual_decision"] = "continue"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
-            for name, record in (("baseline", baseline), ("loaded", _loaded_record("loaded-gate-01"))):
+            for name, record in (("baseline", baseline), ("loaded", _loaded_record("loaded-requirements-confirmation-01"))):
                 path = root / f"{name}.json"
                 path.write_text(json.dumps(record), encoding="utf-8")
                 record_evidence(path, evidence_dir, cases_path, Path("tools/clients.json"))
@@ -256,7 +256,7 @@ class EvidenceTests(unittest.TestCase):
         changes = (
             {"schema_version": 2},
             {"outcome": "pending"},
-            {"case_id": "gate-loaded", "skill_loaded": True, "outcome": "pass", "actual_decision": "continue"},
+            {"case_id": "requirements-confirmation-loaded", "skill_loaded": True, "outcome": "pass", "actual_decision": "continue"},
         )
         for change in changes:
             with self.subTest(change=change), tempfile.TemporaryDirectory() as temp_dir:
@@ -307,7 +307,7 @@ class EvidenceTests(unittest.TestCase):
             evidence_dir = root / "evidence"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
             input_path.write_text(
-                json.dumps(_baseline_record("baseline-gate-01", "normal rationale")),
+                json.dumps(_baseline_record("baseline-requirements-confirmation-01", "normal rationale")),
                 encoding="utf-8",
             )
 
@@ -317,7 +317,7 @@ class EvidenceTests(unittest.TestCase):
                 cases_path,
                 Path("tools/clients.json"),
             )
-            self.assertEqual(evidence_dir / "baseline-gate-01.json", written)
+            self.assertEqual(evidence_dir / "baseline-requirements-confirmation-01.json", written)
             self.assertTrue(written.is_file())
 
             with self.assertRaises(EvaluationError) as raised:
@@ -344,7 +344,7 @@ class EvidenceTests(unittest.TestCase):
             input_path = root / "record.json"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
             input_path.write_text(
-                json.dumps(_baseline_record("baseline-gate-01", "sk-abcdefghijklmnop")),
+                json.dumps(_baseline_record("baseline-requirements-confirmation-01", "sk-abcdefghijklmnop")),
                 encoding="utf-8",
             )
 
@@ -370,7 +370,7 @@ class EvidenceTests(unittest.TestCase):
                 input_path = root / "record.json"
                 cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
                 input_path.write_text(
-                    json.dumps(_baseline_record("baseline-gate-01", forbidden)),
+                    json.dumps(_baseline_record("baseline-requirements-confirmation-01", forbidden)),
                     encoding="utf-8",
                 )
 
@@ -430,7 +430,7 @@ class EvidenceTests(unittest.TestCase):
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
-            baseline = _baseline_record("baseline-gate-01", "observed baseline")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "observed baseline")
             failed = _loaded_record("ordinary-failure-01")
             failed.update({"outcome": "fail", "actual_decision": "continue", "reason": "ordinary failure"})
             retry = _loaded_record("ordinary-retry-01")
@@ -455,14 +455,14 @@ class EvidenceTests(unittest.TestCase):
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
-            baseline = _baseline_record("baseline-gate-01", "observed baseline")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "observed baseline")
             new_rationale = _loaded_record("new-rationale-01")
             new_rationale.update({"outcome": "fail", "actual_decision": "continue", "reason": "new bypass rationale"})
             new_rationale["rationale_review"] = {
                 "status": "new-rationale",
                 "reviewer": "tester",
                 "rule_refs": ["REQ-TS2C-015"],
-                "change_proposal_id": "CP-01",
+                "change_request_id": "CR-01",
             }
             superseding = _loaded_record("superseding-run-01")
             superseding["recorded_at"] = "2026-07-30T00:00:01Z"
@@ -478,21 +478,21 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(0, summary.failed_runs)
         self.assertEqual(0, summary.open_rationales)
 
-    def test_validate_suite_requires_an_approved_change_proposal_for_new_rationale(self) -> None:
+    def test_validate_suite_requires_an_approved_change_request_for_new_rationale(self) -> None:
         # Break caught: a rerun cannot close a discovered bypass without an
-        # approved change proposal, even when the rerun itself passes.
+        # approved Change Request, even when the rerun itself passes.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
-            baseline = _baseline_record("baseline-gate-01", "observed baseline")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "observed baseline")
             source = _loaded_record("unapproved-source-01")
             source.update({"outcome": "fail", "actual_decision": "continue", "reason": "new bypass"})
             source["rationale_review"] = {
                 "status": "new-rationale", "reviewer": "tester",
-                "rule_refs": ["REQ-TS2C-015"], "change_proposal_id": "CP-99",
+                "rule_refs": ["REQ-TS2C-015"], "change_request_id": "CR-99",
             }
             rerun = _loaded_record("unapproved-rerun-01")
             rerun["recorded_at"] = "2026-07-30T00:00:01Z"
@@ -518,12 +518,12 @@ class EvidenceTests(unittest.TestCase):
             evidence_dir.mkdir()
             cases = _paired_cases()
             cases["cases"].append(_wording_case())
-            baseline = _baseline_record("baseline-gate-01", "observed baseline")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "observed baseline")
             source = _loaded_record("wrong-case-source-01")
             source.update({"outcome": "fail", "actual_decision": "continue", "reason": "new bypass"})
             source["rationale_review"] = {
                 "status": "new-rationale", "reviewer": "tester",
-                "rule_refs": ["REQ-TS2C-015"], "change_proposal_id": "CP-01",
+                "rule_refs": ["REQ-TS2C-015"], "change_request_id": "CR-01",
             }
             wrong_case = _wording_record("wrong-case-rerun-01")
             wrong_case["supersedes_run_ids"] = ["wrong-case-source-01"]
@@ -548,13 +548,13 @@ class EvidenceTests(unittest.TestCase):
             evidence_dir.mkdir()
             cases = _paired_cases()
             cases["cases"].append(_wording_case())
-            baseline = _baseline_record("baseline-gate-01", "observed baseline")
-            pressure = _loaded_record("loaded-gate-01")
+            baseline = _baseline_record("baseline-requirements-confirmation-01", "observed baseline")
+            pressure = _loaded_record("loaded-requirements-confirmation-01")
             source = _wording_record("wording-source-01")
             source.update({"outcome": "fail", "actual_decision": "continue", "reason": "new bypass"})
             source["rationale_review"] = {
                 "status": "new-rationale", "reviewer": "tester",
-                "rule_refs": ["REQ-TS2C-015"], "change_proposal_id": "CP-01",
+                "rule_refs": ["REQ-TS2C-015"], "change_request_id": "CR-01",
             }
             reruns = []
             for index in range(1, 6):
@@ -582,7 +582,7 @@ class EvidenceTests(unittest.TestCase):
             root = Path(temp_dir)
             cases_path = root / "cases.json"
             input_path = root / "record.json"
-            record = _baseline_record("baseline-gate-01", "normal rationale")
+            record = _baseline_record("baseline-requirements-confirmation-01", "normal rationale")
             record["rationale_review"] = {
                 "status": "pending",
                 "reviewer": "tester",
@@ -633,11 +633,11 @@ class EvidenceTests(unittest.TestCase):
             baseline_path = root / "baseline.json"
             loaded_path = root / "loaded.json"
             baseline_path.write_text(
-                json.dumps(_baseline_record("baseline-gate-01", "baseline rationale")),
+                json.dumps(_baseline_record("baseline-requirements-confirmation-01", "baseline rationale")),
                 encoding="utf-8",
             )
             loaded_path.write_text(
-                json.dumps(_loaded_record("loaded-gate-01")), encoding="utf-8"
+                json.dumps(_loaded_record("loaded-requirements-confirmation-01")), encoding="utf-8"
             )
             for input_path in (baseline_path, loaded_path):
                 record_evidence(
@@ -656,10 +656,10 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(0, summary.failed_runs)
 
 
-class Cp09ContractTests(unittest.TestCase):
-    def test_record_evidence_rejects_cp10_for_a_nonreference_case(self) -> None:
+class Cr09ContractTests(unittest.TestCase):
+    def test_record_evidence_rejects_cr10_for_a_nonreference_case(self) -> None:
         # Break caught: bypassing prepare with hand-authored JSON must not attach
-        # CP-10 provenance to a client smoke record.
+        # CR-10 provenance to a client smoke record.
         from tools.evaluate import EvaluationError, record_evidence
 
         level1_case = next(
@@ -680,7 +680,7 @@ class Cp09ContractTests(unittest.TestCase):
                 "prompt": level1_case["prompt"],
                 "actual_decision": "pass",
                 "rerun_of": "client-codex-01",
-                "change_proposal": "CP-10",
+                "change_request": "CR-10",
                 "supersedes_run_ids": ["client-codex-01"],
             }
         )
@@ -750,7 +750,7 @@ class Cp09ContractTests(unittest.TestCase):
             input_path = root / "record.json"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
             input_path.write_text(
-                json.dumps(_v2_baseline_record("baseline-gate-02", "attempt-a", "session-a")),
+                json.dumps(_v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a")),
                 encoding="utf-8",
             )
 
@@ -761,7 +761,7 @@ class Cp09ContractTests(unittest.TestCase):
                 Path("tools/clients.json"),
             )
 
-        self.assertEqual("baseline-gate-02.json", written.name)
+        self.assertEqual("baseline-requirements-confirmation-02.json", written.name)
 
     def test_record_evidence_rejects_placeholder_environment(self) -> None:
         # Break caught: equal placeholder strings cannot prove that repeated
@@ -772,7 +772,7 @@ class Cp09ContractTests(unittest.TestCase):
             root = Path(temp_dir)
             cases_path = root / "cases.json"
             input_path = root / "record.json"
-            record = _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a")
+            record = _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a")
             record["client_version"] = "precise version unavailable"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
             input_path.write_text(json.dumps(record), encoding="utf-8")
@@ -789,7 +789,7 @@ class Cp09ContractTests(unittest.TestCase):
             root = Path(temp_dir)
             cases_path = root / "cases.json"
             input_path = root / "record.json"
-            record = _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a")
+            record = _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a")
             record["prepared_at"] = "2026-07-30T00:00:02Z"
             cases_path.write_text(json.dumps(_paired_cases()), encoding="utf-8")
             input_path.write_text(json.dumps(record), encoding="utf-8")
@@ -806,8 +806,8 @@ class Cp09ContractTests(unittest.TestCase):
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
-            baseline = _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a")
-            loaded = _v2_loaded_record("loaded-gate-02", "attempt-b", "session-b")
+            baseline = _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a")
+            loaded = _v2_loaded_record("loaded-requirements-confirmation-02", "attempt-b", "session-b")
             loaded["model"] = "different-model"
             for record in (baseline, loaded):
                 (evidence_dir / f"{record['run_id']}.json").write_text(
@@ -886,7 +886,7 @@ class Cp09ContractTests(unittest.TestCase):
                 )
 
     def test_validate_suite_requires_archived_rerun_source(self) -> None:
-        # Break caught: an active CP-09 rerun must retain the immutable v1
+        # Break caught: an active CR-09 rerun must retain the immutable v1
         # source it claims to replace.
         from tools.evaluate import EvaluationError, validate_suite
 
@@ -894,9 +894,9 @@ class Cp09ContractTests(unittest.TestCase):
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
-            baseline = _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a")
-            baseline.update({"rerun_of": "baseline-gate-01", "change_proposal": "CP-09"})
-            (evidence_dir / "baseline-gate-02.json").write_text(
+            baseline = _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a")
+            baseline.update({"rerun_of": "baseline-requirements-confirmation-01", "change_request": "CR-09"})
+            (evidence_dir / "baseline-requirements-confirmation-02.json").write_text(
                 json.dumps(baseline), encoding="utf-8"
             )
             cases_path = root / "cases.json"
@@ -912,7 +912,7 @@ class Cp09ContractTests(unittest.TestCase):
 
     def test_schema_v2_cases_reject_schema_v1_active_reference_evidence(self) -> None:
         # Break caught: copying rejected schema-v1 records back into active
-        # evidence must not bypass every CP-09 execution and archive check.
+        # evidence must not bypass every CR-09 execution and archive check.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -920,8 +920,8 @@ class Cp09ContractTests(unittest.TestCase):
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
             for record in (
-                _baseline_record("baseline-gate-01", "old baseline"),
-                _loaded_record("loaded-gate-01"),
+                _baseline_record("baseline-requirements-confirmation-01", "old baseline"),
+                _loaded_record("loaded-requirements-confirmation-01"),
             ):
                 (evidence_dir / f"{record['run_id']}.json").write_text(
                     json.dumps(record), encoding="utf-8"
@@ -944,8 +944,8 @@ class Cp09ContractTests(unittest.TestCase):
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
             records = (
-                _baseline_record("baseline-gate-01", "old baseline"),
-                _v2_loaded_record("loaded-gate-02", "attempt-b", "session-b"),
+                _baseline_record("baseline-requirements-confirmation-01", "old baseline"),
+                _v2_loaded_record("loaded-requirements-confirmation-02", "attempt-b", "session-b"),
             )
             for record in records:
                 (evidence_dir / f"{record['run_id']}.json").write_text(
@@ -959,7 +959,7 @@ class Cp09ContractTests(unittest.TestCase):
             with self.assertRaisesRegex(EvaluationError, "active reference evidence requires schema v2"):
                 validate_suite(cases_path, Path("tools/clients.json"), evidence_dir)
 
-    def test_canonical_schema_v2_reference_requires_exact_cp09_mapping(self) -> None:
+    def test_canonical_schema_v2_reference_requires_exact_cr09_mapping(self) -> None:
         # Break caught: omitting rerun provenance from otherwise valid v2
         # records must not disable the archive gate.
         from tools.evaluate import EvaluationError, validate_suite
@@ -969,8 +969,8 @@ class Cp09ContractTests(unittest.TestCase):
             evidence_dir = root / "evidence"
             evidence_dir.mkdir()
             records = (
-                _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a"),
-                _v2_loaded_record("loaded-gate-02", "attempt-b", "session-b"),
+                _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a"),
+                _v2_loaded_record("loaded-requirements-confirmation-02", "attempt-b", "session-b"),
             )
             for record in records:
                 (evidence_dir / f"{record['run_id']}.json").write_text(
@@ -984,33 +984,33 @@ class Cp09ContractTests(unittest.TestCase):
             with self.assertRaisesRegex(EvaluationError, "exact approved rerun mapping"):
                 validate_suite(cases_path, Path("tools/clients.json"), evidence_dir)
 
-    def test_validate_suite_accepts_one_level_cp09_rerun_mapping(self) -> None:
+    def test_validate_suite_accepts_one_level_cr09_rerun_mapping(self) -> None:
         # Break caught: requiring a general supersession graph would reject the
-        # approved single archive-to-active CP-09 mapping.
+        # approved single archive-to-active CR-09 mapping.
         from tools.evaluate import validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             evidence_dir = root / "evidence"
-            archive_dir = root / "archive" / "cp09"
+            archive_dir = root / "archive" / "cr09"
             evidence_dir.mkdir()
             archive_dir.mkdir(parents=True)
             archived = (
-                _baseline_record("baseline-gate-01", "old baseline"),
-                _loaded_record("loaded-gate-01"),
+                _baseline_record("baseline-requirements-confirmation-01", "old baseline"),
+                _loaded_record("loaded-requirements-confirmation-01"),
             )
             active = (
-                _v2_baseline_record("baseline-gate-02", "attempt-a", "session-a"),
-                _v2_loaded_record("loaded-gate-02", "attempt-b", "session-b"),
+                _v2_baseline_record("baseline-requirements-confirmation-02", "attempt-a", "session-a"),
+                _v2_loaded_record("loaded-requirements-confirmation-02", "attempt-b", "session-b"),
             )
             for record in archived:
                 (archive_dir / f"{record['run_id']}.json").write_text(
                     json.dumps(record), encoding="utf-8"
                 )
             for record, source_id in zip(
-                active, ("baseline-gate-01", "loaded-gate-01"), strict=True
+                active, ("baseline-requirements-confirmation-01", "loaded-requirements-confirmation-01"), strict=True
             ):
-                record.update({"rerun_of": source_id, "change_proposal": "CP-09"})
+                record.update({"rerun_of": source_id, "change_request": "CR-09"})
                 (evidence_dir / f"{record['run_id']}.json").write_text(
                     json.dumps(record), encoding="utf-8"
                 )
@@ -1024,17 +1024,17 @@ class Cp09ContractTests(unittest.TestCase):
         self.assertEqual(1, summary.baseline_observed)
         self.assertEqual(1, summary.pressure_passed)
 
-    def test_validate_suite_cannot_disable_cp09_archive_by_relabeling(self) -> None:
-        # Break caught: changing every canonical CP-09 label to another CP ID
+    def test_validate_suite_cannot_disable_cr09_archive_by_relabeling(self) -> None:
+        # Break caught: changing every canonical CR-09 label to another CP ID
         # must not bypass the immutable archive mapping gate.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             for path in evidence_dir.glob("*.json"):
                 record = json.loads(path.read_text(encoding="utf-8"))
-                if record["change_proposal"] == "CP-09":
-                    record["change_proposal"] = "CP-11"
+                if record["change_request"] == "CR-09":
+                    record["change_request"] = "CR-11"
                     path.write_text(json.dumps(record), encoding="utf-8")
 
             with self.assertRaises(EvaluationError):
@@ -1045,13 +1045,13 @@ class Cp09ContractTests(unittest.TestCase):
                     {"wording"},
                 )
 
-    def test_validate_suite_closes_cp10_with_exact_full_group_rebuild(self) -> None:
-        # Break caught: the immutable CP-09 failure may close only when all five
-        # exact CP-10 replacements form the effective commit-boundary group.
+    def test_validate_suite_closes_cr10_with_exact_full_group_rebuild(self) -> None:
+        # Break caught: the immutable CR-09 failure may close only when all five
+        # exact CR-10 replacements form the effective commit-boundary group.
         from tools.evaluate import validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
 
             summary = validate_suite(
                 Path("evaluation/cases.json"),
@@ -1067,13 +1067,13 @@ class Cp09ContractTests(unittest.TestCase):
         self.assertEqual(0, summary.failed_runs)
         self.assertEqual(0, summary.open_rationales)
 
-    def test_validate_suite_requires_the_recorded_cp10_trigger_source(self) -> None:
-        # Break caught: the fixed CP-10 migration must close run 07's recorded
+    def test_validate_suite_requires_the_recorded_cr10_trigger_source(self) -> None:
+        # Break caught: the fixed CR-10 migration must close run 07's recorded
         # rationale, not any different failure inserted into the same group.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             original_trigger_path = (
                 evidence_dir / "wording-commit-boundary-07.json"
             )
@@ -1108,9 +1108,9 @@ class Cp09ContractTests(unittest.TestCase):
                     {"wording"},
                 )
 
-    def test_validate_suite_requires_immutable_cp09_active_sources_for_cp10(self) -> None:
-        # Break caught: CP-10 must not close after any semantic rewrite of the
-        # 16 CP-09 active source records, including backfilling run 07.
+    def test_validate_suite_requires_immutable_cr09_active_sources_for_cr10(self) -> None:
+        # Break caught: CR-10 must not close after any semantic rewrite of the
+        # 16 CR-09 active source records, including backfilling run 07.
         from tools.evaluate import EvaluationError, validate_suite
 
         mutations = (
@@ -1120,7 +1120,7 @@ class Cp09ContractTests(unittest.TestCase):
         )
         for name, run_id, field, value in mutations:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temp_dir:
-                evidence_dir = _write_cp10_suite(Path(temp_dir))
+                evidence_dir = _write_cr10_suite(Path(temp_dir))
                 path = evidence_dir / f"{run_id}.json"
                 record = json.loads(path.read_text(encoding="utf-8"))
                 record[field] = value
@@ -1135,10 +1135,10 @@ class Cp09ContractTests(unittest.TestCase):
                     )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             path = evidence_dir / "wording-commit-boundary-07.json"
             record = json.loads(path.read_text(encoding="utf-8"))
-            record["rationale_review"]["change_proposal_id"] = "CP-10"
+            record["rationale_review"]["change_request_id"] = "CR-10"
             path.write_text(json.dumps(record), encoding="utf-8")
 
             with self.assertRaisesRegex(EvaluationError, "source integrity"):
@@ -1149,9 +1149,9 @@ class Cp09ContractTests(unittest.TestCase):
                     {"wording"},
                 )
 
-    def test_validate_suite_rejects_invalid_cp10_rebuild_variants(self) -> None:
+    def test_validate_suite_rejects_invalid_cr10_rebuild_variants(self) -> None:
         # Break caught: a partial, extra, cross-case, failed, environment-
-        # changed, identity-reused, or unapproved rebuild must not close CP-10.
+        # changed, identity-reused, or unapproved rebuild must not close CR-10.
         from tools.evaluate import EvaluationError, validate_suite
 
         scenarios = (
@@ -1166,7 +1166,7 @@ class Cp09ContractTests(unittest.TestCase):
         for scenario in scenarios:
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as temp_dir:
                 root = Path(temp_dir)
-                evidence_dir = _write_cp10_suite(root)
+                evidence_dir = _write_cr10_suite(root)
                 registry_path = Path("tools/clients.json")
                 target = evidence_dir / "wording-commit-boundary-15.json"
                 if scenario == "partial":
@@ -1174,8 +1174,8 @@ class Cp09ContractTests(unittest.TestCase):
                 elif scenario == "extra":
                     extra = json.loads(target.read_text(encoding="utf-8"))
                     extra["run_id"] = "wording-commit-boundary-16"
-                    extra["attempt_id"] = "attempt-cp10-16"
-                    extra["session_ref"] = "codex-session-cp10-16"
+                    extra["attempt_id"] = "attempt-cr10-16"
+                    extra["session_ref"] = "codex-session-cr10-16"
                     extra["rerun_of"] = "wording-commit-boundary-10"
                     extra["supersedes_run_ids"] = ["wording-commit-boundary-10"]
                     (evidence_dir / "wording-commit-boundary-16.json").write_text(
@@ -1228,9 +1228,9 @@ class Cp09ContractTests(unittest.TestCase):
                     shutil.copy2(
                         Path(
                             "docs/changes/"
-                            "tracing-spec-to-code-cp09-reproducible-evaluation-reruns.md"
+                            "tracing-spec-to-code-cr09-reproducible-evaluation-reruns.md"
                         ),
-                        registry_root / "docs" / "changes" / "cp09.md",
+                        registry_root / "docs" / "changes" / "cr09.md",
                     )
                     registry_path = registry_root / "tools" / "clients.json"
 
@@ -1242,13 +1242,13 @@ class Cp09ContractTests(unittest.TestCase):
                         {"wording"},
                     )
 
-    def test_validate_suite_checks_cp10_identity_under_other_run_type_filter(self) -> None:
-        # Break caught: CP-10 validation is global, so a baseline-only command
+    def test_validate_suite_checks_cr10_identity_under_other_run_type_filter(self) -> None:
+        # Break caught: CR-10 validation is global, so a baseline-only command
         # must not bypass duplicate identity inside the replacement group.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             target = evidence_dir / "wording-commit-boundary-15.json"
             record = json.loads(target.read_text(encoding="utf-8"))
             previous = json.loads(
@@ -1267,13 +1267,13 @@ class Cp09ContractTests(unittest.TestCase):
                     {"baseline"},
                 )
 
-    def test_validate_suite_requires_cp10_rebuild_after_trigger(self) -> None:
+    def test_validate_suite_requires_cr10_rebuild_after_trigger(self) -> None:
         # Break caught: run 11 must not reuse a result prepared and recorded
-        # after source 06 but before the run 07 rationale triggered CP-10.
+        # after source 06 but before the run 07 rationale triggered CR-10.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             target = evidence_dir / "wording-commit-boundary-11.json"
             record = json.loads(target.read_text(encoding="utf-8"))
             record["prepared_at"] = "2026-07-30T17:20:34.000Z"
@@ -1288,13 +1288,13 @@ class Cp09ContractTests(unittest.TestCase):
                     {"wording"},
                 )
 
-    def test_validate_suite_requires_cp10_prepare_after_each_source(self) -> None:
+    def test_validate_suite_requires_cr10_prepare_after_each_source(self) -> None:
         # Break caught: a run 15 template prepared after trigger 07 but before
-        # source 10 completed is not a fresh CP-10 replacement.
+        # source 10 completed is not a fresh CR-10 replacement.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            evidence_dir = _write_cp10_suite(Path(temp_dir))
+            evidence_dir = _write_cr10_suite(Path(temp_dir))
             target = evidence_dir / "wording-commit-boundary-15.json"
             record = json.loads(target.read_text(encoding="utf-8"))
             record["prepared_at"] = "2026-07-30T17:21:10.000Z"
@@ -1308,14 +1308,14 @@ class Cp09ContractTests(unittest.TestCase):
                     {"wording"},
                     )
 
-    def test_validate_suite_ignores_approval_text_outside_proposal_metadata(self) -> None:
+    def test_validate_suite_ignores_approval_text_outside_request_metadata(self) -> None:
         # Break caught: approval examples or prose in a Proposed document must
         # not be mistaken for the authoritative Status and Gate metadata.
         from tools.evaluate import EvaluationError, validate_suite
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            evidence_dir = _write_cp10_suite(root)
+            evidence_dir = _write_cr10_suite(root)
             registry_root = root / "isolated-registry"
             (registry_root / "tools").mkdir(parents=True)
             changes_dir = registry_root / "docs" / "changes"
@@ -1327,22 +1327,22 @@ class Cp09ContractTests(unittest.TestCase):
             shutil.copy2(
                 Path(
                     "docs/changes/"
-                    "tracing-spec-to-code-cp09-reproducible-evaluation-reruns.md"
+                    "tracing-spec-to-code-cr09-reproducible-evaluation-reruns.md"
                 ),
-                changes_dir / "cp09.md",
+                changes_dir / "cr09.md",
             )
-            (changes_dir / "cp10.md").write_text(
+            (changes_dir / "cr10.md").write_text(
                 "\n".join(
                     (
-                        "# CP-10 — Proposed example",
+                        "# CR-10 — Proposed example",
                         "",
                         "- Status: Proposed",
-                        "- Gate Δ: Pending",
+                        "- Change approval: Pending",
                         "",
                         "## Example text",
                         "",
                         "Status: Approved",
-                        "Gate Δ: Approved",
+                        "Change approval: Approved",
                     )
                 ),
                 encoding="utf-8",
@@ -1363,7 +1363,7 @@ class Cp09ContractTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            evidence_dir = _write_cp10_suite(root)
+            evidence_dir = _write_cr10_suite(root)
             registry_root = root / "isolated-registry"
             (registry_root / "tools").mkdir(parents=True)
             changes_dir = registry_root / "docs" / "changes"
@@ -1375,18 +1375,18 @@ class Cp09ContractTests(unittest.TestCase):
             shutil.copy2(
                 Path(
                     "docs/changes/"
-                    "tracing-spec-to-code-cp09-reproducible-evaluation-reruns.md"
+                    "tracing-spec-to-code-cr09-reproducible-evaluation-reruns.md"
                 ),
-                changes_dir / "cp09.md",
+                changes_dir / "cr09.md",
             )
-            (changes_dir / "cp10.md").write_text(
+            (changes_dir / "cr10.md").write_text(
                 "\n".join(
                     (
-                        "# CP-10 — Conflicting metadata",
+                        "# CR-10 — Conflicting metadata",
                         "",
                         "- 状态：Proposed",
                         "- Status: Approved",
-                        "- Gate Δ: Approved",
+                        "- Change approval: Approved",
                     )
                 ),
                 encoding="utf-8",
@@ -1431,8 +1431,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual("", completed.stderr)
         self.assertEqual("CASE_INVALID", json.loads(completed.stdout)["code"])
 
-    def test_prepare_emits_exact_cp10_rebuild_template(self) -> None:
-        # Break caught: CP-10 prepare must bind each approved replacement to
+    def test_prepare_emits_exact_cr10_rebuild_template(self) -> None:
+        # Break caught: CR-10 prepare must bind each approved replacement to
         # its one exact active source as both rerun and supersession provenance.
         completed = subprocess.run(
             [
@@ -1447,8 +1447,8 @@ class CliTests(unittest.TestCase):
                 "wording-commit-boundary-11",
                 "--rerun-of",
                 "wording-commit-boundary-06",
-                "--change-proposal",
-                "CP-10",
+                "--change-request",
+                "CR-10",
             ],
             check=False,
             capture_output=True,
@@ -1457,15 +1457,15 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
         template = json.loads(completed.stdout)
-        self.assertEqual("CP-10", template["change_proposal"])
+        self.assertEqual("CR-10", template["change_request"])
         self.assertEqual("wording-commit-boundary-06", template["rerun_of"])
         self.assertEqual(
             ["wording-commit-boundary-06"],
             template["supersedes_run_ids"],
         )
 
-    def test_prepare_rejects_noncanonical_cp10_pair(self) -> None:
-        # Break caught: prepare must not issue a CP-10 identity for a run/source
+    def test_prepare_rejects_noncanonical_cr10_pair(self) -> None:
+        # Break caught: prepare must not issue a CR-10 identity for a run/source
         # pair outside the approved five-entry mapping.
         completed = subprocess.run(
             [
@@ -1480,8 +1480,8 @@ class CliTests(unittest.TestCase):
                 "wording-commit-boundary-11",
                 "--rerun-of",
                 "wording-commit-boundary-07",
-                "--change-proposal",
-                "CP-10",
+                "--change-request",
+                "CR-10",
             ],
             check=False,
             capture_output=True,
@@ -1491,8 +1491,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(1, completed.returncode)
         self.assertIn("exact approved rerun mapping", completed.stdout)
 
-    def test_prepare_rejects_cp10_for_a_nonreference_case(self) -> None:
-        # Break caught: CP-10 is one fixed wording migration and must not issue
+    def test_prepare_rejects_cr10_for_a_nonreference_case(self) -> None:
+        # Break caught: CR-10 is one fixed wording migration and must not issue
         # provenance for client smoke or any other unrelated case.
         completed = subprocess.run(
             [
@@ -1507,8 +1507,8 @@ class CliTests(unittest.TestCase):
                 "client-codex-02",
                 "--rerun-of",
                 "client-codex-01",
-                "--change-proposal",
-                "CP-10",
+                "--change-request",
+                "CR-10",
             ],
             check=False,
             capture_output=True,
@@ -1534,8 +1534,8 @@ class CliTests(unittest.TestCase):
                 "wording-commit-boundary-11",
                 "--rerun-of",
                 "wording-commit-boundary-06",
-                "--change-proposal",
-                "CP-10",
+                "--change-request",
+                "CR-10",
             ],
             check=False,
             capture_output=True,
@@ -1547,7 +1547,7 @@ class CliTests(unittest.TestCase):
 
     def test_prepare_emits_unique_schema_v2_rerun_templates(self) -> None:
         # Break caught: copied prepare output must not reuse an execution
-        # identity, and CP-09 rerun provenance must be bound into the template.
+        # identity, and CR-09 rerun provenance must be bound into the template.
         templates = []
         for _ in range(2):
             completed = subprocess.run(
@@ -1556,15 +1556,15 @@ class CliTests(unittest.TestCase):
                     "tools/evaluate.py",
                     "prepare",
                     "--case",
-                    "gate-baseline",
+                    "requirements-confirmation-baseline",
                     "--client",
                     "codex",
                     "--run-id",
-                    "baseline-gate-02",
+                    "baseline-requirements-confirmation-02",
                     "--rerun-of",
-                    "baseline-gate-01",
-                    "--change-proposal",
-                    "CP-09",
+                    "baseline-requirements-confirmation-01",
+                    "--change-request",
+                    "CR-09",
                 ],
                 check=False,
                 capture_output=True,
@@ -1576,25 +1576,25 @@ class CliTests(unittest.TestCase):
         self.assertEqual({2}, {template["schema_version"] for template in templates})
         self.assertEqual(2, len({template["attempt_id"] for template in templates}))
         self.assertTrue(all(template["prepared_at"].endswith("Z") for template in templates))
-        self.assertTrue(all(template["rerun_of"] == "baseline-gate-01" for template in templates))
-        self.assertTrue(all(template["change_proposal"] == "CP-09" for template in templates))
+        self.assertTrue(all(template["rerun_of"] == "baseline-requirements-confirmation-01" for template in templates))
+        self.assertTrue(all(template["change_request"] == "CR-09" for template in templates))
 
     def test_prepare_requires_rerun_flags_together(self) -> None:
         # Break caught: a template with only half of its archive provenance
-        # cannot be validated as the approved one-level CP-09 mapping.
+        # cannot be validated as the approved one-level CR-09 mapping.
         completed = subprocess.run(
             [
                 sys.executable,
                 "tools/evaluate.py",
                 "prepare",
                 "--case",
-                "gate-baseline",
+                "requirements-confirmation-baseline",
                 "--client",
                 "codex",
                 "--run-id",
-                "baseline-gate-02",
+                "baseline-requirements-confirmation-02",
                 "--rerun-of",
-                "baseline-gate-01",
+                "baseline-requirements-confirmation-01",
             ],
             check=False,
             capture_output=True,
@@ -1604,7 +1604,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(1, completed.returncode)
         self.assertIn("EVIDENCE_INVALID", completed.stdout)
 
-    def test_prepare_rejects_canonical_reference_without_cp09_mapping(self) -> None:
+    def test_prepare_rejects_canonical_reference_without_cr09_mapping(self) -> None:
         # Break caught: prepare must not emit a canonical active T02 template
         # that record/validate will later reject for missing archive provenance.
         completed = subprocess.run(
@@ -1613,11 +1613,11 @@ class CliTests(unittest.TestCase):
                 "tools/evaluate.py",
                 "prepare",
                 "--case",
-                "gate-baseline",
+                "requirements-confirmation-baseline",
                 "--client",
                 "codex",
                 "--run-id",
-                "baseline-gate-02",
+                "baseline-requirements-confirmation-02",
             ],
             check=False,
             capture_output=True,
@@ -1718,15 +1718,15 @@ class CliTests(unittest.TestCase):
                 "tools/evaluate.py",
                 "prepare",
                 "--case",
-                "gate-baseline",
+                "requirements-confirmation-baseline",
                 "--client",
                 "codex",
                 "--run-id",
-                "baseline-gate-02",
+                "baseline-requirements-confirmation-02",
                 "--rerun-of",
-                "baseline-gate-01",
-                "--change-proposal",
-                "CP-09",
+                "baseline-requirements-confirmation-01",
+                "--change-request",
+                "CR-09",
             ],
             check=False,
             capture_output=True,
@@ -1735,7 +1735,7 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(0, completed.returncode)
         template = json.loads(completed.stdout)
-        self.assertEqual("gate-baseline", template["case_id"])
+        self.assertEqual("requirements-confirmation-baseline", template["case_id"])
         self.assertFalse(template["skill_loaded"])
         self.assertEqual("observed", template["outcome"])
 
@@ -1746,16 +1746,16 @@ def _paired_cases() -> dict[str, object]:
         "schema_version": 1,
         "cases": [
             {
-                "id": "gate-baseline",
-                "scenario_id": "gate",
+                "id": "requirements-confirmation-baseline",
+                "scenario_id": "requirements-confirmation",
                 "run_type": "baseline",
                 "prompt": prompt,
                 "skill_loaded": False,
                 "expected_decision": "observed",
             },
             {
-                "id": "gate-loaded",
-                "scenario_id": "gate",
+                "id": "requirements-confirmation-loaded",
+                "scenario_id": "requirements-confirmation",
                 "run_type": "pressure",
                 "prompt": prompt,
                 "skill_loaded": True,
@@ -1774,7 +1774,7 @@ def _baseline_record(run_id: str, rationale: str) -> dict[str, object]:
     return {
         "schema_version": 1,
         "run_id": run_id,
-        "case_id": "gate-baseline",
+        "case_id": "requirements-confirmation-baseline",
         "client_id": "codex",
         "skill_loaded": False,
         "client_version": "1.0",
@@ -1791,7 +1791,7 @@ def _baseline_record(run_id: str, rationale: str) -> dict[str, object]:
             "status": "no-new-rationale",
             "reviewer": "tester",
             "rule_refs": [],
-            "change_proposal_id": None,
+            "change_request_id": None,
         },
         "supersedes_run_ids": [],
     }
@@ -1801,7 +1801,7 @@ def _loaded_record(run_id: str) -> dict[str, object]:
     record = _baseline_record(run_id, "pause for approval")
     record.update(
         {
-            "case_id": "gate-loaded",
+            "case_id": "requirements-confirmation-loaded",
             "skill_loaded": True,
             "actual_decision": "pause",
             "outcome": "pass",
@@ -1865,7 +1865,7 @@ def _v2_baseline_record(
             "session_ref": session_ref,
             "recorded_at": recorded_at,
             "rerun_of": None,
-            "change_proposal": None,
+            "change_request": None,
         }
     )
     return record
@@ -1880,7 +1880,7 @@ def _v2_loaded_record(
     record = _v2_baseline_record(run_id, attempt_id, session_ref, recorded_at)
     record.update(
         {
-            "case_id": "gate-loaded",
+            "case_id": "requirements-confirmation-loaded",
             "skill_loaded": True,
             "actual_decision": "pause",
             "verbatim_rationale": "pause for approval",
@@ -1937,11 +1937,11 @@ def _v2_client_record(
     return record
 
 
-def _write_cp10_suite(root: Path) -> Path:
+def _write_cr10_suite(root: Path) -> Path:
     evidence_dir = root / "evidence"
-    archive_dir = root / "archive" / "cp09"
+    archive_dir = root / "archive" / "cr09"
     shutil.copytree(Path("evaluation/evidence"), evidence_dir)
-    shutil.copytree(Path("evaluation/archive/cp09"), archive_dir)
+    shutil.copytree(Path("evaluation/archive/cr09"), archive_dir)
     for offset, (new, old) in enumerate(
         zip(range(11, 16), range(6, 11), strict=True),
         start=1,
@@ -1953,9 +1953,9 @@ def _write_cp10_suite(root: Path) -> Path:
         source.update(
             {
                 "run_id": f"wording-commit-boundary-{new:02d}",
-                "attempt_id": f"attempt-cp10-{new:02d}",
+                "attempt_id": f"attempt-cr10-{new:02d}",
                 "prepared_at": f"2026-07-31T00:00:{offset:02d}.000Z",
-                "session_ref": f"codex-session-cp10-{new:02d}",
+                "session_ref": f"codex-session-cr10-{new:02d}",
                 "recorded_at": f"2026-07-31T00:01:{offset:02d}.000Z",
                 "actual_decision": "pause",
                 "verbatim_rationale": "Remote mutation needs current-user authorization.",
@@ -1965,11 +1965,11 @@ def _write_cp10_suite(root: Path) -> Path:
                     "status": "no-new-rationale",
                     "reviewer": "codex-evaluator",
                     "rule_refs": ["skills/tracing-spec-to-code/SKILL.md"],
-                    "change_proposal_id": None,
+                    "change_request_id": None,
                 },
                 "supersedes_run_ids": [source_id],
                 "rerun_of": source_id,
-                "change_proposal": "CP-10",
+                "change_request": "CR-10",
             }
         )
         (evidence_dir / f"{source['run_id']}.json").write_text(

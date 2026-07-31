@@ -13,11 +13,16 @@ SCRIPTS_DIR = REPO_ROOT / "skills" / "tracing-spec-to-code" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from tstc.config import load_config
-from tstc.artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
+from tstc.artifacts import (
+    ApprovalRef,
+    ArtifactKind,
+    ArtifactParseError,
+    discover_artifacts,
+)
 
 
 class DiscoverArtifactsTests(unittest.TestCase):
-    def test_parses_top_workflow_metadata_and_normalizes_statuses(self) -> None:
+    def test_parses_canonical_workflow_metadata_and_approval_refs(self) -> None:
         fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = Path(temp_dir).resolve()
@@ -25,18 +30,18 @@ class DiscoverArtifactsTests(unittest.TestCase):
             spec_path = repo_root / "docs/specs/sample-spec.md"
             spec_path.write_text(
                 spec_path.read_text(encoding="utf-8")
-                .replace("- Status: Approved", "- 状态：approved — locked")
-                .replace("- Gate S: Approved", "- Gate S：APPROVED by owner"),
+                .replace("- Status: Approved", "- Status: approved — locked")
+                .replace(
+                    "- Requirements confirmation: Approved",
+                    "- Requirements confirmation: APPROVED by owner",
+                ),
                 encoding="utf-8",
             )
             roadmap_path = repo_root / "docs/plans/sample-roadmap.md"
             roadmap_path.write_text(
                 roadmap_path.read_text(encoding="utf-8")
                 .replace("- Status: Approved", "- Status: in progress")
-                .replace(
-                    "- Current milestone: M01",
-                    "- 当前 milestone：M01",
-                ),
+                .replace("- Current milestone: M01", "- Current milestone: M01"),
                 encoding="utf-8",
             )
 
@@ -48,10 +53,10 @@ class DiscoverArtifactsTests(unittest.TestCase):
             self.assertEqual("Approved", getattr(spec, "status", None))
             self.assertEqual(3, getattr(spec, "status_line", 0))
             self.assertEqual(
-                [("S", "Approved", 4)],
+                [("Requirements confirmation", "Approved", 4)],
                 [
-                    (gate.name, gate.status, gate.line)
-                    for gate in getattr(spec, "gate_refs", ())
+                    (approval.name, approval.status, approval.line)
+                    for approval in spec.approval_refs
                 ],
             )
             self.assertEqual("In Progress", getattr(roadmap, "status", None))
@@ -60,11 +65,19 @@ class DiscoverArtifactsTests(unittest.TestCase):
                 getattr(roadmap, "current_milestone_id", None),
             )
             self.assertEqual(
-                [("P", "Approved", 5)],
+                [("Implementation approval", "Approved", 5)],
                 [
-                    (gate.name, gate.status, gate.line)
-                    for gate in getattr(roadmap, "gate_refs", ())
+                    (approval.name, approval.status, approval.line)
+                    for approval in roadmap.approval_refs
                 ],
+            )
+            self.assertEqual(
+                ApprovalRef(
+                    name="Requirements confirmation",
+                    status="Approved",
+                    line=4,
+                ),
+                spec.approval_refs[0],
             )
 
     def test_discovers_default_artifacts_and_parses_definitions(self) -> None:
@@ -92,8 +105,49 @@ class DiscoverArtifactsTests(unittest.TestCase):
         )
         self.assertEqual(
             ("REQ-SAMPLE-002", "M01-T02"),
-            by_kind[ArtifactKind.CHANGE_PROPOSAL].referenced_ids,
+            by_kind[ArtifactKind.CHANGE_REQUEST].referenced_ids,
         )
+
+    def test_legacy_change_request_filename_is_rejected(self) -> None:
+        fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir).resolve()
+            shutil.copytree(fixture_root, repo_root, dirs_exist_ok=True)
+            change_request = (
+                repo_root / "docs/changes/sample-cr01-traceability.md"
+            )
+            change_request.rename(
+                repo_root / ("docs/changes/sample-" + "cp" + "01-traceability.md")
+            )
+
+            with self.assertRaises(ArtifactParseError) as raised:
+                discover_artifacts(load_config(repo_root))
+
+            self.assertEqual(
+                "LEGACY_CHANGE_REQUEST_FILENAME",
+                raised.exception.code,
+            )
+
+    def test_change_request_heading_must_match_filename_id(self) -> None:
+        fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir).resolve()
+            shutil.copytree(fixture_root, repo_root, dirs_exist_ok=True)
+            change_request = (
+                repo_root / "docs/changes/sample-cr01-traceability.md"
+            )
+            change_request.write_text(
+                change_request.read_text(encoding="utf-8").replace(
+                    "# CR-01 — Clarify traceability",
+                    "# CR-02 — Clarify traceability",
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(ArtifactParseError) as raised:
+                discover_artifacts(load_config(repo_root))
+
+            self.assertEqual("CHANGE_REQUEST_ID_MISMATCH", raised.exception.code)
 
     def test_discovers_artifacts_with_custom_filename_templates(self) -> None:
         fixture_root = REPO_ROOT / "tests" / "fixtures" / "valid-project"
@@ -109,8 +163,8 @@ class DiscoverArtifactsTests(unittest.TestCase):
             (repo_root / "docs/plans/sample-m01-contracts.md").rename(
                 repo_root / "docs/plans/m01-sample-contracts.md"
             )
-            (repo_root / "docs/changes/sample-cp01-traceability.md").rename(
-                repo_root / "docs/changes/cp01-sample-traceability.md"
+            (repo_root / "docs/changes/sample-cr01-traceability.md").rename(
+                repo_root / "docs/changes/cr01-sample-traceability.md"
             )
             (repo_root / ".tracing-spec-to-code.json").write_text(
                 json.dumps(
@@ -121,8 +175,8 @@ class DiscoverArtifactsTests(unittest.TestCase):
                         "milestone_plan_filename_template": (
                             "m{milestone}-{feature}-{milestone_slug}.md"
                         ),
-                        "change_proposal_filename_template": (
-                            "cp{proposal}-{feature}-{proposal_slug}.md"
+                        "change_request_filename_template": (
+                            "cr{change_request}-{feature}-{change_request_slug}.md"
                         ),
                     }
                 ),
@@ -136,7 +190,7 @@ class DiscoverArtifactsTests(unittest.TestCase):
                     "spec-sample.md",
                     "roadmap-sample.md",
                     "m01-sample-contracts.md",
-                    "cp01-sample-traceability.md",
+                    "cr01-sample-traceability.md",
                 },
                 {artifact.path.name for artifact in artifacts},
             )

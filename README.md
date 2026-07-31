@@ -44,7 +44,7 @@ non-owned replacements, but Python's cross-platform standard-library path APIs
 cannot close the interval between creating a path and first recording its
 identity. Protection against a malicious concurrent filesystem writer requires
 native handle-relative APIs and is deferred to a separate security-hardening
-proposal.
+request.
 
 Supported client IDs and local layouts:
 
@@ -119,7 +119,7 @@ python tools/evaluate.py validate --run-type baseline --run-type pressure --run-
 python tools/evaluate.py summary --run-type baseline --run-type pressure --run-type wording --format json
 ```
 
-The detailed offline preparation, immutable recording, CP-09 archive, CP-10
+The detailed offline preparation, immutable recording, CR-09 archive, CR-10
 replacement, and external-client boundaries are documented in
 `evaluation/README.md`. Client discovery and smoke execution remain
 environment-specific verification; this repository does not manufacture a
@@ -133,7 +133,7 @@ python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py precommit --r
 ```
 
 `precommit` validates canonical traceability, task completion, targeted and
-broader verification, approved proposals, baseline dirty paths, exact staged
+broader verification, approved Change Requests, baseline dirty paths, exact staged
 scope, and the commit draft. It is read-only: the Skill performs the separately
 approved `git --literal-pathspecs add -- <exact paths>` and one normal
 `git commit`; ordinary pathspec interpretation is prohibited.
@@ -146,7 +146,7 @@ Without `.tracing-spec-to-code.json`, the validator uses:
 docs/specs/<feature>-spec.md
 docs/plans/<feature>-roadmap.md
 docs/plans/<feature>-mNN-<milestone-slug>.md
-docs/changes/<feature>-cpNN-<proposal-slug>.md
+docs/changes/<feature>-crNN-<change-request-slug>.md
 ```
 
 `<feature>` defaults to the repository directory name. Copy and edit `skills/tracing-spec-to-code/assets/templates/config.json` to override directories, the feature slug, or filename templates. Configured directories must remain inside the repository, and filename templates must remain Markdown basenames with the required placeholders.
@@ -158,13 +158,13 @@ Canonical Markdown templates are under `skills/tracing-spec-to-code/assets/templ
 The validator checks deterministic workflow metadata and blockers:
 
 - Every artifact has exactly one known `Status`.
-- The roadmap has one valid `Current milestone`; Gate S and the roadmap Gate P are `Approved`.
-- When an active milestone plan exists, its Gate P is also `Approved`; without one, only the explicit `Awaiting` handoff to the next incomplete milestone is valid.
+- The roadmap has one valid `Current milestone`; Requirements confirmation and the roadmap Implementation approval are `Approved`.
+- When an active milestone plan exists, its Implementation approval is also `Approved`; without one, only the explicit `Awaiting` handoff to the next incomplete milestone is valid.
 - At most one unfinished milestone plan exists, and it is the roadmap's next incomplete milestone.
 - Every milestone plan defines 2–5 valid task headings under `## Tasks`.
-- A change proposal remains blocking until both its status and Gate Δ are `Approved`.
+- A Change Request remains blocking until both its status and Change approval are `Approved`.
 
-The Skill policy complements these mechanical checks. It requires explicit Gate S/P/Δ approval, pauses material deviations for impact analysis and a change proposal, loads only a bounded task context, chooses behavioral verification or TDD by risk, rejects invalid RED results, and records evidence in the milestone plan while delivering only a summary by default.
+The Skill policy complements these mechanical checks. It requires explicit Requirements confirmation, Implementation approval, and Change approval; pauses material deviations for impact analysis and a Change Request; loads only a bounded task context; chooses behavioral verification or TDD by risk; rejects invalid RED results; and records evidence in the milestone plan while delivering only a summary by default.
 
 ## Results
 
@@ -205,7 +205,7 @@ Stable M02 workflow codes:
 - `PLAN_MULTIPLE_ACTIVE`
 - `PLAN_NOT_NEXT_MILESTONE`
 - `TASK_COUNT_INVALID`
-- `CHANGE_PROPOSAL_PENDING`
+- `CHANGE_REQUEST_PENDING`
 
 Stable M03 evidence and commit codes:
 
@@ -224,7 +224,7 @@ M04 installs the Skill from a local clone without installing dependencies.
 M05 records the completed local evaluation matrix and release-candidate
 verification. Eight-client live discovery/smoke remains an explicitly
 user-owned external verification boundary and is not claimed by the repository.
-Approved CP-12 marks the project administratively complete with that limitation:
+Approved CR-12 marks the project administratively complete with that limitation:
 no client PASS is implied, and unfiltered evaluation remains fail closed until
 real client evidence is recorded.
 

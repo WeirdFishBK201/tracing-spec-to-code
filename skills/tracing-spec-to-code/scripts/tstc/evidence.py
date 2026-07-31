@@ -49,7 +49,7 @@ class EvidenceRecord:
     traceability: tuple[TraceabilityRow, ...]
     task_statuses: tuple[TaskStatusRow, ...]
     verifications: tuple[VerificationRow, ...]
-    approved_proposals: tuple[str, ...]
+    approved_change_requests: tuple[str, ...]
     deviations: tuple[str, ...]
     baseline_dirty_paths: tuple[str, ...]
     commit_scope: tuple[CommitScopeRow, ...]
@@ -61,18 +61,18 @@ class EvidenceRecord:
     task_status_table_count: int = 0
     verification_table_count: int = 0
     commit_scope_table_count: int = 0
-    approved_proposals_count: int = 0
+    approved_change_requests_count: int = 0
     deviations_count: int = 0
     baseline_dirty_paths_count: int = 0
     commit_draft_count: int = 0
-    approved_proposals_valid: bool = True
+    approved_change_requests_valid: bool = True
     deviations_valid: bool = True
     baseline_dirty_paths_valid: bool = True
     traceability_line: int = 0
     task_status_line: int = 0
     verification_line: int = 0
     commit_scope_line: int = 0
-    approved_proposals_line: int = 0
+    approved_change_requests_line: int = 0
     deviations_line: int = 0
     baseline_dirty_paths_line: int = 0
     commit_message_line: int = 0
@@ -88,12 +88,12 @@ _REQUIREMENTS = re.compile(
     re.IGNORECASE,
 )
 _EVIDENCE_FIELD = re.compile(
-    r"^-\s*(Approved proposals|Deviations|Baseline dirty paths)"
+    r"^-\s*(Approved Change Requests|Deviations|Baseline dirty paths)"
     r"\s*[:：]\s*(.*?)\s*$",
     re.IGNORECASE,
 )
 _REQUIREMENT_ID = re.compile(r"REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}\Z")
-_PROPOSAL_ID = re.compile(r"CP-\d+\Z", re.IGNORECASE)
+_CHANGE_REQUEST_ID = re.compile(r"CR-\d+\Z", re.IGNORECASE)
 _WINDOWS_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
 _INVALID_PATH_CHARS = frozenset("*?[")
 
@@ -166,7 +166,7 @@ def _field_values(value: str) -> tuple[str, ...]:
     return _split_values(value)
 
 
-def _proposal_values(value: str) -> tuple[tuple[str, ...], bool]:
+def _change_request_values(value: str) -> tuple[tuple[str, ...], bool]:
     if not value.strip():
         return (), False
     values = _field_values(value)
@@ -175,7 +175,7 @@ def _proposal_values(value: str) -> tuple[tuple[str, ...], bool]:
         value.strip().casefold() == "none"
         or (
             bool(values)
-            and all(_PROPOSAL_ID.fullmatch(item) for item in values)
+            and all(_CHANGE_REQUEST_ID.fullmatch(item) for item in values)
         ),
     )
 
@@ -242,7 +242,7 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     traceability: list[TraceabilityRow] = []
     task_statuses: list[TaskStatusRow] = []
     verifications: list[VerificationRow] = []
-    approved_proposals: list[str] = []
+    approved_change_requests: list[str] = []
     deviations: list[str] = []
     baseline_dirty_paths: list[str] = []
     commit_scope: list[CommitScopeRow] = []
@@ -252,11 +252,11 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     task_status_table_count = 0
     verification_table_count = 0
     commit_scope_table_count = 0
-    approved_proposals_count = 0
+    approved_change_requests_count = 0
     deviations_count = 0
     baseline_dirty_paths_count = 0
     commit_draft_count = 0
-    approved_proposals_valid = True
+    approved_change_requests_valid = True
     deviations_valid = True
     baseline_dirty_paths_valid = True
 
@@ -264,7 +264,7 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     task_status_line = 0
     verification_line = 0
     commit_scope_line = 0
-    approved_proposals_line = 0
+    approved_change_requests_line = 0
     deviations_line = 0
     baseline_dirty_paths_line = 0
     commit_message_line = 0
@@ -364,15 +364,15 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
                 label = field.group(1).casefold()
                 value = field.group(2)
                 line_number = index + 1
-                if label == "approved proposals":
-                    approved_proposals_count += 1
-                    approved_proposals_line = (
-                        approved_proposals_line or line_number
+                if label == "approved change requests":
+                    approved_change_requests_count += 1
+                    approved_change_requests_line = (
+                        approved_change_requests_line or line_number
                     )
-                    parsed, valid = _proposal_values(value)
-                    approved_proposals.extend(parsed)
-                    approved_proposals_valid = (
-                        approved_proposals_valid and valid
+                    parsed, valid = _change_request_values(value)
+                    approved_change_requests.extend(parsed)
+                    approved_change_requests_valid = (
+                        approved_change_requests_valid and valid
                     )
                 elif label == "deviations":
                     deviations_count += 1
@@ -473,7 +473,7 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
         traceability=tuple(traceability),
         task_statuses=tuple(task_statuses),
         verifications=tuple(verifications),
-        approved_proposals=tuple(approved_proposals),
+        approved_change_requests=tuple(approved_change_requests),
         deviations=tuple(deviations),
         baseline_dirty_paths=tuple(baseline_dirty_paths),
         commit_scope=tuple(commit_scope),
@@ -485,18 +485,18 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
         task_status_table_count=task_status_table_count,
         verification_table_count=verification_table_count,
         commit_scope_table_count=commit_scope_table_count,
-        approved_proposals_count=approved_proposals_count,
+        approved_change_requests_count=approved_change_requests_count,
         deviations_count=deviations_count,
         baseline_dirty_paths_count=baseline_dirty_paths_count,
         commit_draft_count=commit_draft_count,
-        approved_proposals_valid=approved_proposals_valid,
+        approved_change_requests_valid=approved_change_requests_valid,
         deviations_valid=deviations_valid,
         baseline_dirty_paths_valid=baseline_dirty_paths_valid,
         traceability_line=traceability_line,
         task_status_line=task_status_line,
         verification_line=verification_line,
         commit_scope_line=commit_scope_line,
-        approved_proposals_line=approved_proposals_line,
+        approved_change_requests_line=approved_change_requests_line,
         deviations_line=deviations_line,
         baseline_dirty_paths_line=baseline_dirty_paths_line,
         commit_message_line=commit_message_line,
@@ -548,15 +548,15 @@ def _task_requirement_ids(known_plan: object) -> dict[str, set[str]]:
     return task_requirements
 
 
-def _normalized_proposal_id(value: object) -> str | None:
+def _normalized_change_request_id(value: object) -> str | None:
     if isinstance(value, str):
         candidate = value.strip().upper()
-        return candidate if _PROPOSAL_ID.fullmatch(candidate) else None
+        return candidate if _CHANGE_REQUEST_ID.fullmatch(candidate) else None
     path = getattr(value, "path", None)
     if isinstance(path, Path):
         match = re.search(r"(?:^|-)cp0*(\d+)(?:-|$)", path.stem, re.IGNORECASE)
         if match:
-            return f"CP-{int(match.group(1)):02d}"
+            return f"CR-{int(match.group(1)):02d}"
     return None
 
 
@@ -596,7 +596,7 @@ def _path_error(
 def validate_evidence(
     record: EvidenceRecord,
     known_plan: object,
-    approved_proposals: Iterable[object],
+    approved_change_requests: Iterable[object],
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     expected_tasks = tuple(getattr(known_plan, "task_ids", ()))
@@ -757,24 +757,24 @@ def validate_evidence(
                 )
             )
 
-    expected_proposals = {
-        proposal_id
-        for value in approved_proposals
-        if (proposal_id := _normalized_proposal_id(value))
+    expected_change_requests = {
+        change_request_id
+        for value in approved_change_requests
+        if (change_request_id := _normalized_change_request_id(value))
     }
-    recorded_proposals = set(record.approved_proposals)
+    recorded_change_requests = set(record.approved_change_requests)
     if (
-        record.approved_proposals_count != 1
-        or not record.approved_proposals_valid
-        or len(record.approved_proposals) != len(recorded_proposals)
-        or recorded_proposals != expected_proposals
+        record.approved_change_requests_count != 1
+        or not record.approved_change_requests_valid
+        or len(record.approved_change_requests) != len(recorded_change_requests)
+        or recorded_change_requests != expected_change_requests
     ):
         issues.append(
             _issue(
                 record,
                 "EVIDENCE_INCOMPLETE",
-                record.approved_proposals_line,
-                "approved proposals evidence does not match approved artifacts",
+                record.approved_change_requests_line,
+                "approved Change Requests evidence does not match approved artifacts",
             )
         )
     if record.deviations_count != 1 or not record.deviations_valid:

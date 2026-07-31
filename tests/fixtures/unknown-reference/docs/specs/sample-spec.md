@@ -1,7 +1,7 @@
 # Sample Specification
 
 - Status: Approved
-- Gate S: Approved
+- Requirements confirmation: Approved
 
 ## Requirements
 

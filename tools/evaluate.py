@@ -52,18 +52,18 @@ _EVIDENCE_V2_KEYS = _EVIDENCE_V1_KEYS | {
     "prepared_at",
     "session_ref",
     "rerun_of",
-    "change_proposal",
+    "change_request",
 }
 _REFERENCE_RUN_TYPES = {"baseline", "pressure", "wording"}
 _REFERENCE_CLIENT = "codex"
-_CP09_RERUN_MAPPING = {
-    "baseline-gate-02": ("gate-baseline", "baseline-gate-01"),
+_CR09_RERUN_MAPPING = {
+    "baseline-requirements-confirmation-02": ("requirements-confirmation-baseline", "baseline-requirements-confirmation-01"),
     "baseline-context-02": ("context-baseline", "baseline-context-01"),
     "baseline-verification-git-02": (
         "verification-git-baseline",
         "baseline-verification-git-01",
     ),
-    "loaded-gate-02": ("gate-loaded", "loaded-gate-01"),
+    "loaded-requirements-confirmation-02": ("requirements-confirmation-loaded", "loaded-requirements-confirmation-01"),
     "loaded-context-02": ("context-loaded", "loaded-context-01"),
     "loaded-verification-git-02": (
         "verification-git-loaded",
@@ -84,31 +84,31 @@ _CP09_RERUN_MAPPING = {
         for new, old in zip(range(6, 11), range(1, 6), strict=True)
     },
 }
-_CP09_CASE_IDS = {case_id for case_id, _ in _CP09_RERUN_MAPPING.values()}
-_CP10_RERUN_MAPPING = {
+_CR09_CASE_IDS = {case_id for case_id, _ in _CR09_RERUN_MAPPING.values()}
+_CR10_RERUN_MAPPING = {
     f"wording-commit-boundary-{new:02d}": (
         "wording-commit-boundary",
         f"wording-commit-boundary-{old:02d}",
     )
     for new, old in zip(range(11, 16), range(6, 11), strict=True)
 }
-_CP10_SOURCE_DIGESTS = {
-    "baseline-context-02": "523351389dd59f445371a1c98e207f54e543eec8324b9250c4cee146394db007",
-    "baseline-gate-02": "c549741f43fb996a39a746f5ca00ce478e6e693bd0271f31a785873f20c7c3c5",
-    "baseline-verification-git-02": "686aa89ceb5cdf38934cc3531bcfe5095037c3e5b2cc0231722c362e4945e121",
-    "loaded-context-02": "f10f76bbdbaa2e79f2c6ea9081bc98777257caa5b3c221726625b594393633e5",
-    "loaded-gate-02": "9f8b26de748cb51f071de8bf2000fd46df781929efa950f812f4d0ac84910c1d",
-    "loaded-verification-git-02": "d42b1792eb215ab5ff2a85579efa74c9839861e073b50abd8a3d3528350760ed",
-    "wording-commit-boundary-06": "9568ab615b0a69fd6191dda2fd7410735b7cbf60299f9abf5aba439df68e05f6",
-    "wording-commit-boundary-07": "436d2c70eeb8f5ed4096769f80dfebacabc4f1afd2f3166896747ba3db683671",
-    "wording-commit-boundary-08": "c8b3942d441f4a47ef14b26252820541a9605191785a6718a402a6da0db62bbf",
-    "wording-commit-boundary-09": "5b237306f0c763942c31feef6ff5a484f1b23c1aa5219f78decb0ba5974cb443",
-    "wording-commit-boundary-10": "3241dfd0c67db0551e11ea3d57b4fb120b57fa6553c92aa839823ea07cc182a1",
-    "wording-semantic-scope-06": "0dc6ccb380225c5730378fdd2dc8f2880c9adf2dfdba3872ba62f9b12bf79e6a",
-    "wording-semantic-scope-07": "eb30ab1bbf513c1eb85c9993d126a9e85030575a79a7fdb561f7778016bb169e",
-    "wording-semantic-scope-08": "e888336c29f43b4c34c41fc640e1f131565bd3938231b0dc0648a09e9e37de21",
-    "wording-semantic-scope-09": "5de5943b15d506911194b712eef63f1b868ffff173235a77956ef6ef381e0896",
-    "wording-semantic-scope-10": "4fa227f975591ad987afb3d960b4619eba5cf37c5468a99cd14ef80ce0f1523b",
+_CR10_SOURCE_DIGESTS = {
+    "baseline-context-02": "50d05d76987af213cb65362902c0114efd40cbecf875b5fa432375ff5397fd9f",
+    "baseline-requirements-confirmation-02": "eb7afecb6d77afb4188af404c9680cecba31c0ee715dad008b0125edae49f656",
+    "baseline-verification-git-02": "ee7947b839bc6e61e95573ab0d9f1a6864994571597ce9b5750c56e13f78ae09",
+    "loaded-context-02": "73f99284ffb420c97712dac92df8db0e3dabc261475f1d5924a89f6837c67084",
+    "loaded-requirements-confirmation-02": "f4de510e5524a847e55f91d75bb49d8ddf9b7da7e4b93d030f0dfa626ea8f1f4",
+    "loaded-verification-git-02": "4fdb2c23caf47dd93068e2443a9712dfc3b19317173916cb8b48de9afd5793f2",
+    "wording-commit-boundary-06": "cd8b5075fb4d6e73b317be5a30ab47620efbf0373c7668633d5ea0383c273ec4",
+    "wording-commit-boundary-07": "532281213de435a78735731fdb950cb95cf5d014af008cbc57bd6b562dbf3167",
+    "wording-commit-boundary-08": "0ee50b3381fe6ba8e8dfd92514accc66dbc1207ac0e0c43cd121440858d75f7f",
+    "wording-commit-boundary-09": "1c718bb0604848503b74dce1d58ef50a550cf24f3e86cb3f21ff47697787bd52",
+    "wording-commit-boundary-10": "dd033b7f95cfb20407f255ba70542b402941fc66f45b62bb1f7fc54c91e724cf",
+    "wording-semantic-scope-06": "c3984b41f3914891012ba5aca3a9ac950d515238e0e0db6ef67d542fb1ed9428",
+    "wording-semantic-scope-07": "b315cbac018a9e7dd1f6116eeb6cf7d4efbde9c2c476b490b4ea486d968c50ce",
+    "wording-semantic-scope-08": "ca6e5083ceb858c6882341369a26925d5199b88ee7b39a8f5e6fb4979c966200",
+    "wording-semantic-scope-09": "297ae3f4d8c2f32c2ea88b06d2e4a3683cd12b3138a1ce26a3794bff9c32c7e2",
+    "wording-semantic-scope-10": "cdc0e472348bf6a3818bb54429aabe55a5e6091e7aabb6f132005a4cb93e0a49",
 }
 _PLACEHOLDER_ENVIRONMENT_VALUES = {
     "n/a",
@@ -168,7 +168,7 @@ class EvidenceRecord:
     rationale_review: dict[str, Any]
     supersedes_run_ids: tuple[str, ...]
     rerun_of: str | None
-    change_proposal: str | None
+    change_request: str | None
 
 
 @dataclass(frozen=True)
@@ -446,14 +446,14 @@ def _parse_evidence(raw: dict[str, Any], path: Path) -> EvidenceRecord:
     prepared_at: str | None = None
     session_ref: str | None = None
     rerun_of: str | None = None
-    change_proposal: str | None = None
+    change_request: str | None = None
     if schema_version == 2:
         runtime_surface = raw["runtime_surface"]
         attempt_id = raw["attempt_id"]
         prepared_at = raw["prepared_at"]
         session_ref = raw["session_ref"]
         rerun_of = raw["rerun_of"]
-        change_proposal = raw["change_proposal"]
+        change_request = raw["change_request"]
         identity_pattern = r"[A-Za-z0-9][A-Za-z0-9._-]{2,127}"
         if (
             not all(
@@ -467,12 +467,12 @@ def _parse_evidence(raw: dict[str, Any], path: Path) -> EvidenceRecord:
                 isinstance(rerun_of, str)
                 and not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,79}", rerun_of)
             )
-            or not isinstance(change_proposal, (str, type(None)))
+            or not isinstance(change_request, (str, type(None)))
             or (
-                isinstance(change_proposal, str)
-                and not re.fullmatch(r"CP-\d+", change_proposal, flags=re.IGNORECASE)
+                isinstance(change_request, str)
+                and not re.fullmatch(r"CR-\d+", change_request, flags=re.IGNORECASE)
             )
-            or (rerun_of is None) != (change_proposal is None)
+            or (rerun_of is None) != (change_request is None)
         ):
             raise _evidence_error("EVIDENCE_INVALID", "schema-v2 execution metadata is invalid", path)
         if any(
@@ -494,7 +494,7 @@ def _parse_evidence(raw: dict[str, Any], path: Path) -> EvidenceRecord:
             )
 
     review = raw["rationale_review"]
-    if set(review) != {"status", "reviewer", "rule_refs", "change_proposal_id"}:
+    if set(review) != {"status", "reviewer", "rule_refs", "change_request_id"}:
         raise _evidence_error("EVIDENCE_INVALID", "rationale review keys are invalid", path)
     if (
         review["status"] not in {"no-new-rationale", "covered", "new-rationale"}
@@ -502,7 +502,7 @@ def _parse_evidence(raw: dict[str, Any], path: Path) -> EvidenceRecord:
         or not review["reviewer"]
         or not isinstance(review["rule_refs"], list)
         or not all(isinstance(rule_ref, str) and rule_ref for rule_ref in review["rule_refs"])
-        or (review["change_proposal_id"] is not None and (not isinstance(review["change_proposal_id"], str) or not review["change_proposal_id"]))
+        or (review["change_request_id"] is not None and (not isinstance(review["change_request_id"], str) or not review["change_request_id"]))
         or (review["status"] == "new-rationale" and raw["outcome"] == "pass")
     ):
         raise _evidence_error("EVIDENCE_INVALID", "rationale review is invalid", path)
@@ -517,7 +517,7 @@ def _parse_evidence(raw: dict[str, Any], path: Path) -> EvidenceRecord:
         actual_decision=raw["actual_decision"], verbatim_rationale=raw["verbatim_rationale"],
         outcome=raw["outcome"], reason=raw["reason"], notes=tuple(raw["notes"]),
         rationale_review=review, supersedes_run_ids=tuple(raw["supersedes_run_ids"]),
-        rerun_of=rerun_of, change_proposal=change_proposal,
+        rerun_of=rerun_of, change_request=change_request,
     )
 
 
@@ -537,26 +537,26 @@ def _validate_record_contract(
             "active reference evidence requires schema v2",
             path,
         )
-    if record.change_proposal == "CP-10" or (
-        case.document_schema_version == 2 and case.id in _CP09_CASE_IDS
+    if record.change_request == "CR-10" or (
+        case.document_schema_version == 2 and case.id in _CR09_CASE_IDS
     ):
         mapping = (
-            _CP10_RERUN_MAPPING
-            if record.change_proposal == "CP-10"
-            else _CP09_RERUN_MAPPING
+            _CR10_RERUN_MAPPING
+            if record.change_request == "CR-10"
+            else _CR09_RERUN_MAPPING
         )
         expected = mapping.get(record.run_id)
         expected_supersessions = (
             (record.rerun_of,)
-            if record.change_proposal == "CP-10"
+            if record.change_request == "CR-10"
             else ()
         )
-        expected_proposal = (
-            "CP-10" if record.change_proposal == "CP-10" else "CP-09"
+        expected_request = (
+            "CR-10" if record.change_request == "CR-10" else "CR-09"
         )
         if (
             expected != (case.id, record.rerun_of)
-            or record.change_proposal != expected_proposal
+            or record.change_request != expected_request
             or record.supersedes_run_ids != expected_supersessions
         ):
             raise _evidence_error(
@@ -647,7 +647,7 @@ def validate_suite(
     selected_ids = {case.id for case in selected_cases}
     selected_records = tuple(record for record in records if record.case_id in selected_ids)
     record_map = {record.run_id: record for record in records}
-    approved_proposals = _approved_change_proposals(registry_path)
+    approved_change_requests = _approved_change_requests(registry_path)
 
     v2_records = tuple(record for record in records if record.schema_version == 2)
     attempt_ids = [record.attempt_id for record in v2_records]
@@ -659,18 +659,18 @@ def validate_suite(
             evidence_dir,
         )
 
-    cp09_reruns = tuple(
-        record for record in records if record.change_proposal == "CP-09"
+    cr09_reruns = tuple(
+        record for record in records if record.change_request == "CR-09"
     )
-    if cp09_reruns:
-        rerun_sources = [record.rerun_of for record in cp09_reruns]
+    if cr09_reruns:
+        rerun_sources = [record.rerun_of for record in cr09_reruns]
         if len(set(rerun_sources)) != len(rerun_sources):
             raise _evidence_error(
                 "EVALUATION_FAILED",
                 "archived rerun source is referenced more than once",
                 evidence_dir,
             )
-        archive_dir = evidence_dir.parent / "archive" / "cp09"
+        archive_dir = evidence_dir.parent / "archive" / "cr09"
         archive_paths = (
             tuple(sorted(archive_dir.glob("*.json")))
             if archive_dir.is_dir()
@@ -687,13 +687,13 @@ def validate_suite(
                 "archived rerun source set is incomplete",
                 archive_dir,
             )
-        for record in cp09_reruns:
+        for record in cr09_reruns:
             source = archive_map[record.rerun_of or ""]
             if (
                 record.schema_version != 2
                 or source.schema_version != 1
-                or record.change_proposal != "CP-09"
-                or "CP-09" not in approved_proposals
+                or record.change_request != "CR-09"
+                or "CR-09" not in approved_change_requests
                 or source.case_id != record.case_id
                 or _timestamp(record.recorded_at) <= _timestamp(source.recorded_at)
             ):
@@ -703,35 +703,35 @@ def validate_suite(
                     evidence_dir,
                 )
 
-    cp10_reruns = tuple(
-        record for record in records if record.change_proposal == "CP-10"
+    cr10_reruns = tuple(
+        record for record in records if record.change_request == "CR-10"
     )
-    cp10_source_ids: set[str] = set()
-    if cp10_reruns:
+    cr10_source_ids: set[str] = set()
+    if cr10_reruns:
         evidence_paths = {path.stem: path for path in paths}
         if any(
             source_id not in evidence_paths
             or _semantic_json_digest(evidence_paths[source_id]) != expected_digest
-            for source_id, expected_digest in _CP10_SOURCE_DIGESTS.items()
+            for source_id, expected_digest in _CR10_SOURCE_DIGESTS.items()
         ):
             raise _evidence_error(
                 "EVALUATION_FAILED",
-                "CP-10 source integrity check failed",
+                "CR-10 source integrity check failed",
                 evidence_dir,
             )
-        expected_cp10_ids = set(_CP10_RERUN_MAPPING)
+        expected_cr10_ids = set(_CR10_RERUN_MAPPING)
         if (
-            {record.run_id for record in cp10_reruns} != expected_cp10_ids
-            or "CP-10" not in approved_proposals
+            {record.run_id for record in cr10_reruns} != expected_cr10_ids
+            or "CR-10" not in approved_change_requests
         ):
             raise _evidence_error(
                 "EVALUATION_FAILED",
-                "CP-10 wording rebuild must contain the exact approved five-run mapping",
+                "CR-10 wording rebuild must contain the exact approved five-run mapping",
                 evidence_dir,
             )
         fingerprints = set()
-        for record in cp10_reruns:
-            expected_case, expected_source = _CP10_RERUN_MAPPING[record.run_id]
+        for record in cr10_reruns:
+            expected_case, expected_source = _CR10_RERUN_MAPPING[record.run_id]
             source = record_map.get(expected_source)
             if (
                 source is None
@@ -744,7 +744,7 @@ def validate_suite(
             ):
                 raise _evidence_error(
                     "EVALUATION_FAILED",
-                    "CP-10 wording rebuild mapping is invalid",
+                    "CR-10 wording rebuild mapping is invalid",
                     evidence_dir,
                 )
             if _timestamp(record.prepared_at or "") <= _timestamp(
@@ -752,10 +752,10 @@ def validate_suite(
             ):
                 raise _evidence_error(
                     "EVALUATION_FAILED",
-                    "CP-10 replacement must be prepared after its source",
+                    "CR-10 replacement must be prepared after its source",
                     evidence_dir,
                 )
-            cp10_source_ids.add(expected_source)
+            cr10_source_ids.add(expected_source)
             fingerprints.add(
                 (
                     record.schema_version,
@@ -769,9 +769,9 @@ def validate_suite(
         trigger_id = "wording-commit-boundary-07"
         trigger = record_map.get(trigger_id)
         identity_sets = (
-            {record.attempt_id for record in cp10_reruns},
-            {record.session_ref for record in cp10_reruns},
-            {record.recorded_at for record in cp10_reruns},
+            {record.attempt_id for record in cr10_reruns},
+            {record.session_ref for record in cr10_reruns},
+            {record.recorded_at for record in cr10_reruns},
         )
         if (
             len(fingerprints) != 1
@@ -780,29 +780,29 @@ def validate_suite(
             or trigger.outcome != "fail"
             or any(
                 record_map[source_id].rationale_review["status"] == "new-rationale"
-                for source_id in cp10_source_ids - {trigger_id}
+                for source_id in cr10_source_ids - {trigger_id}
             )
         ):
             raise _evidence_error(
                 "EVALUATION_FAILED",
-                "CP-10 wording rebuild environment or rationale source is invalid",
+                "CR-10 wording rebuild environment or rationale source is invalid",
                 evidence_dir,
             )
-        if any(len(values) != len(cp10_reruns) for values in identity_sets):
+        if any(len(values) != len(cr10_reruns) for values in identity_sets):
             raise _evidence_error(
                 "EVALUATION_FAILED",
-                "CP-10 wording rebuild execution identity is not independent",
+                "CR-10 wording rebuild execution identity is not independent",
                 evidence_dir,
             )
         trigger_time = _timestamp(trigger.recorded_at)
         if any(
             _timestamp(record.prepared_at or "") <= trigger_time
             or _timestamp(record.recorded_at) <= trigger_time
-            for record in cp10_reruns
+            for record in cr10_reruns
         ):
             raise _evidence_error(
                 "EVALUATION_FAILED",
-                "CP-10 wording rebuild must be prepared and recorded after the trigger",
+                "CR-10 wording rebuild must be prepared and recorded after the trigger",
                 evidence_dir,
             )
 
@@ -814,8 +814,8 @@ def validate_suite(
         for superseded_id in candidate.supersedes_run_ids:
             source = record_map[superseded_id]
             if (
-                candidate.change_proposal == "CP-10"
-                and superseded_id in cp10_source_ids
+                candidate.change_request == "CR-10"
+                and superseded_id in cr10_source_ids
             ):
                 continue
             if source.rationale_review["status"] != "new-rationale":
@@ -828,11 +828,11 @@ def validate_suite(
     for record in records:
         if record.rationale_review["status"] != "new-rationale":
             continue
-        if record.run_id in cp10_source_ids:
+        if record.run_id in cr10_source_ids:
             continue
-        proposal_id = record.rationale_review["change_proposal_id"]
-        if not isinstance(proposal_id, str) or proposal_id.upper() not in approved_proposals:
-            raise _evidence_error("EVALUATION_FAILED", "new rationale lacks an Approved change proposal", evidence_dir)
+        request_id = record.rationale_review["change_request_id"]
+        if not isinstance(request_id, str) or request_id.upper() not in approved_change_requests:
+            raise _evidence_error("EVALUATION_FAILED", "new rationale lacks an Approved Change Request", evidence_dir)
         if not any(
             record.run_id in candidate.supersedes_run_ids
             and candidate.outcome == "pass"
@@ -992,7 +992,7 @@ def validate_suite(
     )
 
 
-def _approved_change_proposals(registry_path: Path) -> set[str]:
+def _approved_change_requests(registry_path: Path) -> set[str]:
     changes_dir = registry_path.resolve().parents[1] / "docs" / "changes"
     approved: set[str] = set()
     for path in changes_dir.glob("*.md"):
@@ -1003,7 +1003,7 @@ def _approved_change_proposals(registry_path: Path) -> set[str]:
         lines = content.splitlines()
         if not lines:
             continue
-        heading = re.match(r"#\s+(CP-\d+)\b", lines[0], flags=re.IGNORECASE)
+        heading = re.match(r"#\s+(CR-\d+)\b", lines[0], flags=re.IGNORECASE)
         if heading is None:
             continue
         metadata: dict[str, list[str]] = {}
@@ -1011,7 +1011,7 @@ def _approved_change_proposals(registry_path: Path) -> set[str]:
             if line.startswith("## "):
                 break
             match = re.fullmatch(
-                r"-\s*(Status|状态|Gate Δ)\s*[：:]\s*(.+?)\s*",
+                r"-\s*(Status|状态|Change approval)\s*[：:]\s*(.+?)\s*",
                 line,
                 flags=re.IGNORECASE,
             )
@@ -1020,14 +1020,14 @@ def _approved_change_proposals(registry_path: Path) -> set[str]:
                     match.group(2)
                 )
         status = metadata.get("status", []) + metadata.get("状态", [])
-        gate = metadata.get("gate δ", [])
+        change_approval = metadata.get("change approval", [])
         if (
             len(status) != 1
-            or len(gate) != 1
+            or len(change_approval) != 1
             or status[0].casefold() != "approved"
             or not re.fullmatch(
                 r"Approved(?:\s+on\s+\d{4}-\d{2}-\d{2})?",
-                gate[0],
+                change_approval[0],
                 flags=re.IGNORECASE,
             )
         ):
@@ -1065,7 +1065,7 @@ def _parser() -> argparse.ArgumentParser:
     prepare.add_argument("--client", required=True, dest="client_id")
     prepare.add_argument("--run-id", required=True)
     prepare.add_argument("--rerun-of")
-    prepare.add_argument("--change-proposal")
+    prepare.add_argument("--change-request")
     add_common_paths(prepare)
     record = subparsers.add_parser("record")
     record.add_argument("--input", type=Path, required=True)
@@ -1116,23 +1116,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             if not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,79}", arguments.run_id):
                 raise EvaluationError("EVIDENCE_INVALID", "run_id is invalid")
-            if (arguments.rerun_of is None) != (arguments.change_proposal is None):
+            if (arguments.rerun_of is None) != (arguments.change_request is None):
                 raise EvaluationError(
                     "EVIDENCE_INVALID",
-                    "--rerun-of and --change-proposal must be used together",
+                    "--rerun-of and --change-request must be used together",
                 )
             if arguments.rerun_of is not None and (
                 not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,79}", arguments.rerun_of)
-                or arguments.change_proposal not in {"CP-09", "CP-10"}
+                or arguments.change_request not in {"CR-09", "CR-10"}
             ):
                 raise EvaluationError("EVIDENCE_INVALID", "rerun metadata is invalid")
-            if arguments.change_proposal == "CP-10" or (
-                case.document_schema_version == 2 and case.id in _CP09_CASE_IDS
+            if arguments.change_request == "CR-10" or (
+                case.document_schema_version == 2 and case.id in _CR09_CASE_IDS
             ):
                 mapping = (
-                    _CP10_RERUN_MAPPING
-                    if arguments.change_proposal == "CP-10"
-                    else _CP09_RERUN_MAPPING
+                    _CR10_RERUN_MAPPING
+                    if arguments.change_request == "CR-10"
+                    else _CR09_RERUN_MAPPING
                 )
                 expected = mapping.get(arguments.run_id)
                 if (
@@ -1174,15 +1174,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "status": "pending",
                 "reviewer": "",
                 "rule_refs": [],
-                "change_proposal_id": None,
+                "change_request_id": None,
             },
             "supersedes_run_ids": (
                 [arguments.rerun_of]
-                if arguments.change_proposal == "CP-10"
+                if arguments.change_request == "CR-10"
                 else []
             ),
             "rerun_of": arguments.rerun_of,
-            "change_proposal": arguments.change_proposal,
+            "change_request": arguments.change_request,
         }
         print(json.dumps(template, ensure_ascii=False, indent=2, sort_keys=True))
         return 0

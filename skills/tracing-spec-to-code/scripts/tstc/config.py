@@ -12,8 +12,8 @@ DEFAULT_ROADMAP_FILENAME_TEMPLATE = "{feature}-roadmap.md"
 DEFAULT_MILESTONE_PLAN_FILENAME_TEMPLATE = (
     "{feature}-m{milestone}-{milestone_slug}.md"
 )
-DEFAULT_CHANGE_PROPOSAL_FILENAME_TEMPLATE = (
-    "{feature}-cp{proposal}-{proposal_slug}.md"
+DEFAULT_CHANGE_REQUEST_FILENAME_TEMPLATE = (
+    "{feature}-cr{change_request}-{change_request_slug}.md"
 )
 CONFIG_KEYS = {
     "spec_dir",
@@ -23,7 +23,7 @@ CONFIG_KEYS = {
     "spec_filename_template",
     "roadmap_filename_template",
     "milestone_plan_filename_template",
-    "change_proposal_filename_template",
+    "change_request_filename_template",
 }
 
 
@@ -37,7 +37,7 @@ class ResolvedConfig:
     spec_filename_template: str
     roadmap_filename_template: str
     milestone_plan_filename_template: str
-    change_proposal_filename_template: str
+    change_request_filename_template: str
 
 
 class ConfigError(Exception):
@@ -223,12 +223,12 @@ def load_config(
             {"feature", "milestone", "milestone_slug"},
             {"feature", "milestone", "milestone_slug"},
         ),
-        change_proposal_filename_template=(
+        change_request_filename_template=(
             filename_template(
-                "change_proposal_filename_template",
-                DEFAULT_CHANGE_PROPOSAL_FILENAME_TEMPLATE,
-                {"feature", "proposal", "proposal_slug"},
-                {"feature", "proposal", "proposal_slug"},
+                "change_request_filename_template",
+                DEFAULT_CHANGE_REQUEST_FILENAME_TEMPLATE,
+                {"feature", "change_request", "change_request_slug"},
+                {"feature", "change_request", "change_request_slug"},
             )
         ),
     )

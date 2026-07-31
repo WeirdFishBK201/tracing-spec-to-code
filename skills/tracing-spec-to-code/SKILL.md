@@ -1,6 +1,6 @@
 ---
 name: tracing-spec-to-code
-description: Use when a repository needs spec-to-code traceability, gated milestone planning or execution, controlled fact changes, or deterministic validation of spec, roadmap, milestone plan, and change proposal Markdown artifacts.
+description: Use when a repository needs spec-to-code traceability, gated milestone planning or execution, controlled fact changes, or deterministic validation of spec, roadmap, milestone plan, and change request Markdown artifacts.
 ---
 
 # Tracing Spec to Code
@@ -14,8 +14,9 @@ artifact checks. Unknown or conflicting workflow state fails closed.
 ## Route the work
 
 - Read [workflow.md](references/workflow.md) before creating a roadmap or
-  milestone plan, crossing Gate S/P/Δ, handling a deviation, or choosing the
-  next milestone.
+  milestone plan, requesting Requirements confirmation, Implementation
+  approval, or Change approval, handling a deviation, or choosing the next
+  milestone.
 - Read [task-execution.md](references/task-execution.md) before implementing,
   testing, closing a task, or delivering a milestone.
 - Read [milestone-commit.md](references/milestone-commit.md) before staging,
@@ -24,6 +25,35 @@ artifact checks. Unknown or conflicting workflow state fails closed.
 
 Do not replace these policies with inferred repository conventions, urgency, or
 work already invested.
+
+## Prompt and label policy
+
+Workflow logic uses semantic keys and renders descriptive labels only at the
+user interaction boundary:
+
+| Semantic key | English label | Simplified Chinese label |
+| --- | --- | --- |
+| `requirements_confirmation` | Requirements confirmation | 需求确认 |
+| `implementation_approval` | Implementation approval | 实施批准 |
+| `change_approval` | Change approval | 变更批准 |
+| `change_request` | Change request | 变更申请 |
+
+The exact prompt mappings are:
+
+- requirements_confirmation: Requirements confirmation / 需求确认
+- implementation_approval: Implementation approval / 实施批准
+- change_approval: Change approval / 变更批准
+- change_request: Change request / 变更申请
+
+Routine prompts use the descriptive label and omit internal IDs unless needed for disambiguation or explicitly requested. Select the language from the
+dominant language of the latest user message. ambiguous or unsupported input falls back to English. Language must not change authorization state: both
+languages use the same semantic state, required approval, and decision.
+
+Maintained package content, documentation, templates, JSON, YAML, filenames,
+and commit trailers remain English except for the four exact localized label
+literals in the table. Machine-readable output always uses the semantic keys
+and canonical English contract. Do not add compatibility aliases, fallback
+parsing, migration readers, or dual writes.
 
 ## Validate a repository
 
@@ -54,9 +84,6 @@ python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py precommit \
 
 `precommit` is read-only. It does not stage, commit, clean the index, or contact
 a remote.
-
-Keep stdout available for the result. Treat stderr as argument, configuration,
-or runtime diagnostics.
 
 ## Interpret the result
 
@@ -104,6 +131,6 @@ unknown keys, unsafe paths, and invalid templates fail closed.
 - Grepping ID-like tokens is not equivalent to running the validator.
 - A clean artifact result is not proof that product behavior or tests are
   correct.
-- A passed gate does not authorize a later material deviation.
+- A passed approval does not authorize a later material Change request.
 - A future milestone name in the roadmap is not approval to detail or execute
   it.
