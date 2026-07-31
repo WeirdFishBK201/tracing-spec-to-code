@@ -1,6 +1,6 @@
 # tracing-spec-to-code Roadmap
 
-- Status: In Progress — M06 planning
+- Status: Completed — M06 Readable localized terminology
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Requirements confirmation: Approved on 2026-07-29
 - Implementation approval: Approved on 2026-07-31
@@ -78,5 +78,4 @@ repository contains no `client-*.json` evidence, so it must not claim
 `5/5 + 3/3`; unfiltered evaluation remains fail closed with
 `level1_passed: 0` and `level2_passed: 0`.
 
-M06 implementation remains blocked until this detailed plan receives explicit
-Implementation Approval.
+M06 implementation commit: `d5ca133`.

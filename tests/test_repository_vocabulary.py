@@ -38,13 +38,28 @@ class RepositoryVocabularyTests(unittest.TestCase):
         return "\n".join(lines)
 
     def _text_files(self) -> list[Path]:
+        completed = subprocess.run(
+            [
+                "git",
+                "-c",
+                f"safe.directory={REPO_ROOT.as_posix()}",
+                "ls-files",
+                "--cached",
+                "--others",
+                "--exclude-standard",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         return [
-            path
-            for path in REPO_ROOT.rglob("*")
-            if path.is_file()
-            and path.suffix.lower() in TEXT_SUFFIXES
-            and ".git" not in path.parts
-            and path != Path(__file__).resolve()
+            REPO_ROOT / relative_path
+            for relative_path in completed.stdout.splitlines()
+            if relative_path
+            and (REPO_ROOT / relative_path).is_file()
+            and (REPO_ROOT / relative_path).suffix.lower() in TEXT_SUFFIXES
+            and (REPO_ROOT / relative_path) != Path(__file__).resolve()
         ]
 
     def test_current_tree_has_no_superseded_workflow_vocabulary(self) -> None:
