@@ -3,6 +3,7 @@
 - Status: Approved
 - Requirements confirmation: Approved
 - Approval date: 2026-07-29
+- Change approval: CR-13 approved on 2026-07-31
 - Design basis: `docs/design/2026-07-29-tracing-spec-to-code-design.md`
 - Product boundary: an independent skill project; it does not read, depend on, or modify VGCCoach2
 
@@ -198,6 +199,26 @@ Acceptance criteria:
 - The four exact Simplified Chinese labels are localized data and the only permitted non-English text in maintained documentation examples.
 - This is a breaking migration: no compatibility aliases, fallback parsing, migration readers, or dual writes are retained.
 
+### REQ-TS2C-018 — Public GitHub npx distribution
+
+The canonical Skill must be installable from the public GitHub repository with
+the standard `skills` CLI, with a pinned acceptance path that proves isolated
+project and Codex global installations match the canonical content.
+
+Acceptance criteria:
+
+- The user-facing Quick Start uses
+  `npx skills@latest add WeirdFishBK201/tracing-spec-to-code`.
+- Repository acceptance pins `skills@1.5.21` and records its Node.js minimum.
+- Project and Codex global acceptance run only in isolated temporary roots and
+  force copy installation.
+- Each installed Skill matches `skills/tracing-spec-to-code/` by relative path,
+  byte size, and SHA-256 digest after excluding runtime-only Python cache files.
+- The normal unit suite remains offline; real local-source and public-GitHub
+  acceptance are explicit network-enabled verification commands.
+- The existing Python offline installer and the user-owned external client
+  verification boundary remain unchanged.
+
 ## 3. Non-goals
 
 - A general issue tracker, project-management platform, or status database.
@@ -220,7 +241,7 @@ Acceptance criteria:
 
 Project completion requires:
 
-- REQ-TS2C-001 through REQ-TS2C-017 each have milestone, task, implementation, and verification evidence.
+- REQ-TS2C-001 through REQ-TS2C-018 each have milestone, task, implementation, and verification evidence.
 - Level 1 client verification passes and Level 2 smoke tests have actual records, or an Approved Change Request explicitly records an administrative completion waiver, the unverified boundary, and client results that must not be claimed.
 - The unguided baseline, loaded pressure tests, and wording micro-tests are complete.
 - The canonical skill, validator, installer, documentation, and release metadata work from a clean clone.

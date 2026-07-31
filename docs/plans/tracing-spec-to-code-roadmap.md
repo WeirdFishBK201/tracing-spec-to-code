@@ -1,13 +1,13 @@
 # tracing-spec-to-code Roadmap
 
-- Status: Completed — M06 Readable localized terminology
+- Status: In Progress — M07 execution
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Requirements confirmation: Approved on 2026-07-29
-- Implementation approval: Approved on 2026-07-31
-- Change approval: CR-01 through CR-08 approved on 2026-07-30; CR-09 through CR-12 approved on 2026-07-31
-- Current milestone: M06
-- Current detailed plan: `docs/plans/tracing-spec-to-code-m06-readable-localized-terminology.md`
-- M06 design: `docs/superpowers/specs/2026-07-31-readable-localized-workflow-terminology-design.md`
+- Implementation approval: Approved for M07 on 2026-07-31
+- Change approval: CR-01 through CR-08 approved on 2026-07-30; CR-09 through CR-13 approved on 2026-07-31
+- Current milestone: M07
+- Current detailed plan: `docs/plans/tracing-spec-to-code-m07-npx-github-distribution.md`
+- M07 design: `docs/superpowers/specs/2026-07-31-npx-github-distribution-design.md`
 
 ## Rules
 
@@ -29,15 +29,10 @@
 | M04 — Client distribution | The canonical Skill can be distributed to Level 1 and Level 2 clients through the registry installer | REQ-TS2C-013–014 | M03 | 8×2 installer matrix, complete content and structure validation, Level 1/2 mapping contract |
 | M05 — Evaluation and release | Baseline, pressure-scenario, wording, and release checks produce reproducible evidence | REQ-TS2C-015 | M04 | Baseline/loaded comparison, five-run wording checks, candidate clean-clone release verification; CR-12 administratively waives recorded Level 1/2 results without claiming PASS |
 | M06 — Readable localized terminology | The current tree uses one descriptive English workflow contract and user prompts select English or Simplified Chinese from the latest user message | REQ-TS2C-017 | M05, approved M06 design | Canonical-contract tests, bilingual prompt-policy tests, migrated evidence integrity, tracked-tree vocabulary scan, full local suite |
+| M07 — GitHub npx distribution | The public GitHub repository installs the canonical Skill through the standard `skills` CLI with pinned isolated project/global acceptance | REQ-TS2C-018 | M06, CR-13, approved M07 design | Offline contract tests, fixed-version local-source acceptance, public-GitHub acceptance, canonical manifest equality, full local suite |
 
 ## Long-Term Goals
 
-- Remote package distribution requires a separately approved Change Request
-  after M06. It must install from a public GitHub source and verify a pinned CLI
-  version, project/user scope, canonical-content equality, and clean-environment
-  behavior.
-- That goal does not authorize network access, dependency downloads, GitHub
-  mutation, or push.
 - Native-handle security hardening requires a separate Change Request to assess
   Windows and POSIX handle-relative APIs against malicious replacement between
   path creation and first identity capture.
@@ -61,8 +56,9 @@
 | REQ-TS2C-013 | M04 |
 | REQ-TS2C-014 | M04 |
 | REQ-TS2C-015 | M05 |
-| REQ-TS2C-016 | M01–M06 |
+| REQ-TS2C-016 | M01–M07 |
 | REQ-TS2C-017 | M06 |
+| REQ-TS2C-018 | M07 |
 
 ## Implementation Approval
 
@@ -78,4 +74,8 @@ repository contains no `client-*.json` evidence, so it must not claim
 `5/5 + 3/3`; unfiltered evaluation remains fail closed with
 `level1_passed: 0` and `level2_passed: 0`.
 
-M06 implementation commit: `d5ca133`.
+M06 implementation commit: `d5ca133`; follow-up verification fix: `db982c5`.
+
+M07 Change Approval is recorded in CR-13. The user approved
+`docs/plans/tracing-spec-to-code-m07-npx-github-distribution.md` for
+implementation on 2026-07-31.
