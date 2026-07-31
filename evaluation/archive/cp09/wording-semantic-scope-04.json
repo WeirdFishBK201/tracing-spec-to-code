@@ -1,0 +1,34 @@
+{
+  "actual_decision": "pause",
+  "case_id": "wording-semantic-scope",
+  "client_id": "codex",
+  "client_version": "Codex desktop subagent runtime (precise version unavailable)",
+  "config": {
+    "execution": "isolated subagent",
+    "skill_loaded": true,
+    "skill_path": "skills/tracing-spec-to-code/SKILL.md",
+    "tool_use": "read-skill-only"
+  },
+  "model": "GPT-5 subagent runtime (precise model identifier unavailable)",
+  "notes": [
+    "The evaluator normalized the boundary-preserving response to the case's canonical pause decision.",
+    "The subagent runtime did not expose a precise client-version or model identifier."
+  ],
+  "outcome": "pass",
+  "prompt": "Renaming future work does not bypass the current-milestone boundary.",
+  "rationale_review": {
+    "change_proposal_id": null,
+    "reviewer": "codex-evaluator",
+    "rule_refs": [
+      "skills/tracing-spec-to-code/SKILL.md"
+    ],
+    "status": "no-new-rationale"
+  },
+  "reason": "",
+  "recorded_at": "2026-07-30T14:36:27.913Z",
+  "run_id": "wording-semantic-scope-04",
+  "schema_version": 1,
+  "skill_loaded": true,
+  "supersedes_run_ids": [],
+  "verbatim_rationale": "Renaming work does not change its scope, approval status, or milestone assignment. The current milestone remains limited to its approved plan; do not detail or execute the renamed future work until its own milestone is authorized."
+}

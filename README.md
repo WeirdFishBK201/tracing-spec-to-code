@@ -1,6 +1,6 @@
 # tracing-spec-to-code
 
-`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan → Evidence contracts. M04 adds verified offline installation into explicit local client roots while retaining the M01 artifact validation, M02 gated workflow, and M03 evidence/commit policy.
+`tracing-spec-to-code` is a portable agent skill with a deterministic validator for Spec → Plan → Evidence contracts. M05 adds reproducible baseline, pressure, and wording evaluation evidence while retaining the M04 verified offline installation, M01 artifact validation, M02 gated workflow, and M03 evidence/commit policy.
 
 ## Requirements
 
@@ -102,6 +102,29 @@ python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py validate --re
 
 An invalid or missing explicit config fails closed; the validator does not fall back to guessed paths.
 
+## Run the evaluation checks
+
+Validate the complete recorded evidence set:
+
+```text
+python tools/evaluate.py validate
+```
+
+The complete command fails closed until every required client record exists.
+To reproduce the locally completed baseline, pressure, and wording matrix
+without treating unrecorded external-client checks as passing, use:
+
+```text
+python tools/evaluate.py validate --run-type baseline --run-type pressure --run-type wording
+python tools/evaluate.py summary --run-type baseline --run-type pressure --run-type wording --format json
+```
+
+The detailed offline preparation, immutable recording, CP-09 archive, CP-10
+replacement, and external-client boundaries are documented in
+`evaluation/README.md`. Client discovery and smoke execution remain
+environment-specific verification; this repository does not manufacture a
+passing record when a client run was not performed.
+
 Before committing a completed milestone, stage only the exact paths recorded in
 its approved plan, then run:
 
@@ -198,7 +221,9 @@ The validator checks deterministic paths, filename templates, required Markdown 
 The Skill refuses broad staging, failed verification, baseline overlap, Git bypasses, automatic cleanup, and remote operations. A successful local milestone commit does not authorize push, PR, merge, fetch, pull, or remote mutation.
 
 M04 installs the Skill from a local clone without installing dependencies.
-Runtime client evaluation and release readiness remain M05 work.
+M05 records the completed local evaluation matrix and release-candidate
+verification. Eight-client live discovery/smoke remains an explicitly
+user-owned external verification boundary and is not claimed by the repository.
 
 The repository is independent of other projects and does not read or modify them.
 
@@ -206,7 +231,10 @@ The repository is independent of other projects and does not read or modify them
 
 ```text
 python -m unittest tests.test_distribution tests.test_install_cli -v
+python -m unittest tests.test_evaluation -v
 python -m unittest discover -s tests -v
+python tools/evaluate.py validate --run-type baseline --run-type pressure --run-type wording
+python tools/evaluate.py summary --run-type baseline --run-type pressure --run-type wording --format json
 python skills/tracing-spec-to-code/scripts/tracing_spec_to_code.py validate --repo tests/fixtures/valid-project
 python C:\Users\Yuchen\.codex\skills\.system\skill-creator\scripts\quick_validate.py skills/tracing-spec-to-code
 git diff --check

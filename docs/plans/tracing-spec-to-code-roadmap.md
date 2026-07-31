@@ -4,7 +4,7 @@
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
 - Gate P：Approved — M01 through M05 on 2026-07-30
-- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30
+- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30；CP-09, CP-10, and CP-11 Approved on 2026-07-31
 - Current milestone：M05
 - 当前详细计划：`docs/plans/tracing-spec-to-code-m05-evaluation-release.md`
 - M05 design：`docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
@@ -56,4 +56,4 @@
 
 ## Gate P
 
-M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 与 Gate P 已于 2026-07-30 获得用户批准，当前按 `docs/plans/tracing-spec-to-code-m05-evaluation-release.md` 执行；长期目标不得提前展开详细 task。
+M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 与 Gate P 已于 2026-07-30 获得用户批准。CP-09 的 16 次独立 Codex rerun 已完成，其中 `wording-commit-boundary-07` 暴露 authority-channel 缺口；CP-10 deterministic contract、五次 fresh rebuild和 recorded-evidence 独立复审均已 PASS，M05-T02 Complete。CP-11 记录 2026-07-31 用户保留八客户端 discovery/smoke 执行权并要求直接完成 T04；仓库不得声称尚未记录的 `5/5 + 3/3` 客户端结果，未过滤 evaluation 继续 fail closed。当前执行 M05-T04 本地 release-candidate 收尾；M05 与项目完成状态继续等待用户提供 T03 evidence，长期目标不得提前展开详细 task。
