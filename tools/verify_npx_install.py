@@ -56,6 +56,9 @@ def build_isolated_environment(
             "XDG_CONFIG_HOME": str(user_root / ".config"),
             "XDG_CACHE_HOME": str(user_root / ".cache"),
             "APPDATA": str(user_root / "AppData" / "Roaming"),
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.autocrlf",
+            "GIT_CONFIG_VALUE_0": "false",
         }
     )
     return environment

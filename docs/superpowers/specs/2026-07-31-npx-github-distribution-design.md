@@ -73,7 +73,8 @@ A zero-third-party-dependency Python acceptance tool orchestrates the fixed CLI
 without reimplementing installation:
 
 1. Create a temporary project root and a separate temporary user root.
-2. Set user-home environment variables to the temporary user root.
+2. Set user-home environment variables to the temporary user root and override
+   Git `core.autocrlf=false` for the child process.
 3. Invoke `npx --yes skills@1.5.21 add <source>` with the exact Skill, Codex,
    copy, and non-interactive flags.
 4. Run once in project scope and once with `--global`.
@@ -82,6 +83,11 @@ without reimplementing installation:
    `skills/tracing-spec-to-code/`, excluding runtime-only Python cache files.
 7. Return failure if the CLI exits nonzero, the target is absent, or any
    relative path, size, or digest differs.
+
+The repository marks `skills/tracing-spec-to-code/**` as `text eol=lf` in
+`.gitattributes`. Together with the isolated child Git override, this preserves
+repository blob bytes across Windows GitHub clones so manifest verification
+remains byte-exact rather than normalizing content during comparison.
 
 The tool accepts a source argument so the same contract covers two gates:
 

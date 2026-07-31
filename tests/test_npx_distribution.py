@@ -13,6 +13,7 @@ from tools import verify_npx_install
 REPO_ROOT = Path(__file__).resolve().parents[1]
 README = REPO_ROOT / "README.md"
 LICENSE = REPO_ROOT / "LICENSE"
+GIT_ATTRIBUTES = REPO_ROOT / ".gitattributes"
 INTERACTIVE_COMMAND = (
     "npx skills@latest add WeirdFishBK201/tracing-spec-to-code"
 )
@@ -81,6 +82,13 @@ class ReadmeContractTests(unittest.TestCase):
 
 
 class NpxAcceptanceToolTests(unittest.TestCase):
+    def test_canonical_skill_tree_uses_lf_checkout_bytes(self) -> None:
+        self.assertTrue(GIT_ATTRIBUTES.exists())
+        self.assertIn(
+            "skills/tracing-spec-to-code/** text eol=lf",
+            GIT_ATTRIBUTES.read_text(encoding="utf-8").splitlines(),
+        )
+
     def test_build_command_uses_pinned_non_interactive_copy_install(self) -> None:
         command = verify_npx_install.build_command(
             "candidate-source", "project", "C:/tools/npx.cmd"
@@ -128,6 +136,9 @@ class NpxAcceptanceToolTests(unittest.TestCase):
         self.assertEqual(str(user_root / ".config"), environment["XDG_CONFIG_HOME"])
         self.assertEqual(str(user_root / ".cache"), environment["XDG_CACHE_HOME"])
         self.assertEqual(str(user_root / "AppData" / "Roaming"), environment["APPDATA"])
+        self.assertEqual("1", environment["GIT_CONFIG_COUNT"])
+        self.assertEqual("core.autocrlf", environment["GIT_CONFIG_KEY_0"])
+        self.assertEqual("false", environment["GIT_CONFIG_VALUE_0"])
 
     def test_expected_target_matches_external_client_scope_layout(self) -> None:
         project_root = Path("C:/acceptance/project")
