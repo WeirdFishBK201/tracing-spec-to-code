@@ -21,6 +21,12 @@ GitHub source, project and global scopes, Codex targeting, copy installation,
 and non-interactive execution. Version `1.5.21` is the approved reproducible
 acceptance pin; the README may use `@latest` for normal user installation.
 
+Execution evidence confirmed that `skills@1.5.21 --agent codex --global`
+copies the Skill to the isolated user's shared
+`~/.agents/skills/tracing-spec-to-code/` directory. This corrects the design's
+initial `.codex/skills` assumption without changing the approved command,
+scope, canonical source, or Python offline-installer contract.
+
 ## Proposed change
 
 - Add REQ-TS2C-018 and M07 for public GitHub npx distribution.

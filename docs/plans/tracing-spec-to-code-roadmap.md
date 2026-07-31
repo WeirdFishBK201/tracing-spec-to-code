@@ -1,12 +1,12 @@
 # tracing-spec-to-code Roadmap
 
-- Status: In Progress — M07 execution
+- Status: Completed — M07 implementation; delivery tail reported externally
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Requirements confirmation: Approved on 2026-07-29
 - Implementation approval: Approved for M07 on 2026-07-31
 - Change approval: CR-01 through CR-08 approved on 2026-07-30; CR-09 through CR-13 approved on 2026-07-31
 - Current milestone: M07
-- Current detailed plan: `docs/plans/tracing-spec-to-code-m07-npx-github-distribution.md`
+- Last detailed plan: `docs/plans/tracing-spec-to-code-m07-npx-github-distribution.md`
 - M07 design: `docs/superpowers/specs/2026-07-31-npx-github-distribution-design.md`
 
 ## Rules
@@ -78,4 +78,7 @@ M06 implementation commit: `d5ca133`; follow-up verification fix: `db982c5`.
 
 M07 Change Approval is recorded in CR-13. The user approved
 `docs/plans/tracing-spec-to-code-m07-npx-github-distribution.md` for
-implementation on 2026-07-31.
+implementation on 2026-07-31. The local candidate passed the complete offline
+gate and fixed-version isolated local-source acceptance. Remote fast-forward
+delivery and public-source acceptance are post-commit actions reported in the
+delivery summary, not predicted in repository evidence.

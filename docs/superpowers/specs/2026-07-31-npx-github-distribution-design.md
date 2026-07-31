@@ -64,7 +64,7 @@ verification update. The verified pin requires Node.js 22.20.0 or newer.
 
 The third-party CLI owns its client destination mapping. At version 1.5.21 it
 uses `.agents/skills/tracing-spec-to-code/` for Codex project scope and
-`.codex/skills/tracing-spec-to-code/` for Codex global scope. The existing
+`~/.agents/skills/tracing-spec-to-code/` for Codex global scope. The existing
 Python installer retains its registry-driven paths and explicit-root contract.
 
 ## Acceptance architecture
