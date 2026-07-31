@@ -2,16 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-- Status: Approved — In Progress
+- Status: Completed
 - Milestone: M05 — Evaluation and release
 - Spec: `docs/specs/tracing-spec-to-code-spec.md`
 - Roadmap: `docs/plans/tracing-spec-to-code-roadmap.md`
 - Design: `docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
 - Requirements: REQ-TS2C-015, REQ-TS2C-016
 - Gate P: Approved on 2026-07-30
-- Gate Δ: CP-09, CP-10, and CP-11 Approved on 2026-07-31
+- Gate Δ: CP-09, CP-10, CP-11, and CP-12 Approved on 2026-07-31
 
-**Goal:** Produce reproducible Codex behavior, eight-client compatibility, and staged-candidate clean-clone evidence without publishing or mutating a remote.
+**Goal:** Produce reproducible Codex behavior and staged-candidate clean-clone evidence without publishing or mutating a remote; CP-12 records administrative completion of the unverified eight-client boundary.
 
 **Architecture:** Reuse `tools/clients.json`, one versioned case file, and one standard-library evaluation CLI. CP-09 archives unchanged schema-v1 evidence and records active schema-v2 reruns; CP-10 adds one exact active-to-active full-group rebuild. Client actions remain manual.
 
@@ -141,8 +141,8 @@ Expected: deterministic tests/validators PASS; Codex `3 observed + 3/3 + 5/5 + 5
 | `M05-T03` | `Completed` | `scope-disposition: PASS` |
 | `M05-T04` | `Completed` | `release-candidate: PASS` |
 
-- Approved proposals: CP-09, CP-10, CP-11
-- Deviations: v1 T02 evidence failed independent quality review; CP-09 rerun exposed an authority-channel gap requiring the immutable CP-10 full-group rebuild; on 2026-07-31 the user retained ownership of the eight-client live matrix and directed T04 closeout without Codex executing T03, so no client PASS evidence is claimed; `evaluation/.runtime/` is ignored as a non-release local workspace so T04 can retain drafts without polluting final status.
+- Approved proposals: CP-09, CP-10, CP-11, CP-12
+- Deviations: v1 T02 evidence failed independent quality review; CP-09 rerun exposed an authority-channel gap requiring the immutable CP-10 full-group rebuild; on 2026-07-31 the user retained ownership of the eight-client live matrix and directed T04 closeout without Codex executing T03, so no client PASS evidence is claimed; `evaluation/.runtime/` is ignored as a non-release local workspace so T04 can retain drafts without polluting final status; CP-12 administratively completes M05 despite the unverified client boundary while preserving the fail-closed evaluation result.
 - Baseline dirty paths: None
 
 ### Verification
@@ -183,6 +183,11 @@ README help commands, evidence metadata counts, isolation scanning, and the
 filtered/unfiltered evaluation boundary. Per milestone-commit policy, the
 actual final tree and commit hashes are reported after commit rather than
 written back into the commit that they identify.
+
+Approved CP-12 marks M05 administratively complete. This status does not
+represent `5/5` Level 1 or `3/3` Level 2 evidence: no client result files exist,
+the summary remains `level1_passed: 0` and `level2_passed: 0`, and unfiltered
+evaluation intentionally remains incomplete.
 
 ### Commit scope
 
@@ -238,6 +243,10 @@ written back into the commit that they identify.
 | `evaluation/evidence/wording-commit-boundary-14.json` | Replace CP-09 commit run 9 under CP-10 |
 | `evaluation/evidence/wording-commit-boundary-15.json` | Replace CP-09 commit run 10 under CP-10 |
 Client results are excluded by the user-owned T03 boundary. Ranges and globs are never passed to Git or precommit.
+
+CP-12 and its administrative fact-source updates occurred after the M05
+implementation commit. They do not retroactively change the historical 49-file
+commit scope or its approved trailers.
 
 ### Commit draft
 

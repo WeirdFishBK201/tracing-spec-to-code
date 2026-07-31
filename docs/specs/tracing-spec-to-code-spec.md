@@ -210,7 +210,7 @@ Skill 发布前必须经过未加载 skill 的基线和加载后的压力场景�
 项目完成需要：
 
 - REQ-TS2C-001 至 REQ-TS2C-016 均有 milestone、task、implementation 和 verification evidence。
-- Level 1 客户端验证通过，Level 2 smoke test 有实际记录。
+- Level 1 客户端验证通过且 Level 2 smoke test 有实际记录；或者由 Approved Gate Δ 明确记录行政完成豁免、未验证边界和不得声称的客户端结果。
 - 无指导基线、加载后压力测试和 wording micro-tests 完成。
 - Canonical skill、validator、installer、文档和发布元数据可从干净 clone 使用。
 - 不存在未决 Gate Δ、未解释偏差或未验证完成声明。

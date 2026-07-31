@@ -224,6 +224,9 @@ M04 installs the Skill from a local clone without installing dependencies.
 M05 records the completed local evaluation matrix and release-candidate
 verification. Eight-client live discovery/smoke remains an explicitly
 user-owned external verification boundary and is not claimed by the repository.
+Approved CP-12 marks the project administratively complete with that limitation:
+no client PASS is implied, and unfiltered evaluation remains fail closed until
+real client evidence is recorded.
 
 The repository is independent of other projects and does not read or modify them.
 

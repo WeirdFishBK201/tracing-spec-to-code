@@ -1,10 +1,10 @@
 # tracing-spec-to-code Roadmap
 
-- 状态：In Progress — M05 Evaluation and release
+- 状态：Completed — M05 Evaluation and release
 - Spec：`docs/specs/tracing-spec-to-code-spec.md`
 - Gate S：Approved on 2026-07-29
 - Gate P：Approved — M01 through M05 on 2026-07-30
-- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30；CP-09, CP-10, and CP-11 Approved on 2026-07-31
+- Gate Δ：CP-01 through CP-08 Approved on 2026-07-30；CP-09, CP-10, CP-11, and CP-12 Approved on 2026-07-31
 - Current milestone：M05
 - 当前详细计划：`docs/plans/tracing-spec-to-code-m05-evaluation-release.md`
 - M05 design：`docs/design/2026-07-30-tracing-spec-to-code-m05-evaluation-release-design.md`
@@ -25,7 +25,7 @@
 | M02 — Workflow core | Skill 能执行 Gate S/P/Δ、当前 milestone 限制、受限上下文和自适应测试决策 | REQ-TS2C-003–009 | M01 | Pressure scenarios、workflow fixtures、behavior tests |
 | M03 — Evidence and commit | Skill 能验证 evidence、隔离 stage 范围并安全创建 milestone commit | REQ-TS2C-010–012 | M02 | Temporary Git repo integration tests、failure-path tests |
 | M04 — Client distribution | Canonical skill 可通过 registry installer 分发到 Level 1/2 客户端 | REQ-TS2C-013–014 | M03 | 8×2 installer matrix、完整内容/结构校验、Level 1/2 mapping contract |
-| M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、Level 1 discovery、Level 2 smoke、candidate clean-clone release verification |
+| M05 — Evaluation and release | 基线、压力场景、wording micro-tests 和发布检查形成可复现证据 | REQ-TS2C-015 | M04 | Baseline/loaded comparison、5x wording runs、candidate clean-clone release verification；CP-12 administratively waives recorded Level 1/2 results without claiming PASS |
 
 ## Long-term goals
 
@@ -56,4 +56,4 @@
 
 ## Gate P
 
-M01–M04 已交付，M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`。M05 design 与 Gate P 已于 2026-07-30 获得用户批准。CP-09 的 16 次独立 Codex rerun 已完成，其中 `wording-commit-boundary-07` 暴露 authority-channel 缺口；CP-10 deterministic contract、五次 fresh rebuild和 recorded-evidence 独立复审均已 PASS，M05-T02 Complete。CP-11 记录 2026-07-31 用户保留八客户端 discovery/smoke 执行权并要求直接完成 T04；仓库不得声称尚未记录的 `5/5 + 3/3` 客户端结果，未过滤 evaluation 继续 fail closed。当前执行 M05-T04 本地 release-candidate 收尾；M05 与项目完成状态继续等待用户提供 T03 evidence，长期目标不得提前展开详细 task。
+M01–M05 已交付。M04 implementation commit 为 `a6ef478aaf927399f9439fecf473845a248e9c3e`，M05 implementation commit 为 `95f4c36a8af1581f307ba9e6186236f7e15d04e7`。CP-09 的 16 次独立 Codex rerun、CP-10 deterministic contract、五次 fresh rebuild、recorded-evidence 独立复审和 M05 clean-clone candidate gate 均已 PASS。CP-11 将八客户端 discovery/smoke 交由用户执行；CP-12 经用户批准后将 M05 和路线图标记为行政完成。仓库没有 `client-*.json`，不得声称 `5/5 + 3/3`，未过滤 evaluation 继续 fail closed，summary 保持 `level1_passed: 0`、`level2_passed: 0`。
