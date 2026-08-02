@@ -19,3 +19,7 @@ Acceptance criteria:
 ## Constraints
 
 - <Project-wide constraint>
+
+After Requirements confirmation, commit this approved spec before requesting
+Implementation approval. Its index and worktree content must remain identical
+to recorded HEAD throughout milestone implementation and delivery.

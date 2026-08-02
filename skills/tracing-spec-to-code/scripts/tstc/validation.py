@@ -3,8 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 
 from .artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
+from .change_requests import change_request_id_from_filename
+from .commit_message import validate_commit_message
 from .config import load_config
+from .evidence import (
+    parse_evidence,
+    validate_evidence,
+    validate_evidence_schema,
+    validate_traceability_references,
+)
 from .issues import ValidationIssue, sort_issues
+from .lifecycle import CLOSED_PLAN_STATUSES, analyze_milestone_lifecycle
 
 
 _KNOWN_STATUSES = {
@@ -17,8 +26,6 @@ _KNOWN_STATUSES = {
     "Delivered",
     "Rejected",
 }
-_COMPLETED_STATUSES = {"Completed", "Delivered"}
-
 def _approval_status(artifact: object, name: str) -> tuple[str | None, int]:
     matches = [
         approval
@@ -110,6 +117,39 @@ def validate_repository(
     ]
     roadmap = roadmaps[0]
 
+    def approved_change_data(plan: object) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        ids: list[str] = []
+        checkpoint_artifacts: list[str] = []
+        task_ids = set(getattr(plan, "task_ids", ()))
+        for change_request in change_requests:
+            metadata = change_request.change_request_metadata
+            approval_status, _ = _approval_status(
+                change_request,
+                "Change approval",
+            )
+            if (
+                change_request.status != "Approved"
+                or approval_status != "Approved"
+                or metadata is None
+                or metadata.error is not None
+                or not task_ids.intersection(metadata.affected_tasks)
+            ):
+                continue
+            ids.append(
+                change_request_id_from_filename(
+                    config.change_request_filename_template,
+                    config.feature_slug,
+                    change_request.path.name,
+                )
+            )
+            if (
+                metadata.authoritative_spec_change is True
+                and metadata.fact_change_commit_authorization == "Approved"
+                and metadata.fact_change_base_commit is not None
+            ):
+                checkpoint_artifacts.extend(metadata.fact_change_artifacts)
+        return tuple(dict.fromkeys(ids)), tuple(dict.fromkeys(checkpoint_artifacts))
+
     for artifact in artifacts:
         if (
             artifact.kind != ArtifactKind.ROADMAP
@@ -126,10 +166,8 @@ def validate_repository(
                 )
             )
 
-    milestone_sequence: list[str] = []
-    for milestone_ref in roadmap.milestone_refs:
-        if milestone_ref.milestone_id not in milestone_sequence:
-            milestone_sequence.append(milestone_ref.milestone_id)
+    lifecycle = analyze_milestone_lifecycle(roadmap, plans)
+    milestone_sequence = list(lifecycle.milestone_sequence)
     if (
         roadmap.current_milestone_count != 1
         or roadmap.current_milestone_id is None
@@ -166,11 +204,7 @@ def validate_repository(
                 )
             )
 
-    active_plans = [
-        plan
-        for plan in plans
-        if plan.status not in _COMPLETED_STATUSES
-    ]
+    active_plans = list(lifecycle.active_plans)
     if len(active_plans) > 1:
         for plan in active_plans[1:]:
             issues.append(
@@ -182,15 +216,8 @@ def validate_repository(
                 )
             )
 
-    completed_plans = [
-        plan for plan in plans if plan.status in _COMPLETED_STATUSES
-    ]
-    completed_plan_ids = {plan.milestone_id for plan in completed_plans}
-    completed_milestones: set[str] = set()
-    for milestone_id in milestone_sequence:
-        if milestone_id not in completed_plan_ids:
-            break
-        completed_milestones.add(milestone_id)
+    completed_plans = list(lifecycle.closed_plans)
+    completed_milestones = set(lifecycle.closed_milestone_prefix)
     for plan in completed_plans:
         if plan.milestone_id not in completed_milestones:
             issues.append(
@@ -204,20 +231,10 @@ def validate_repository(
                     ),
                 )
             )
-    next_milestone = next(
-        (
-            milestone_id
-            for milestone_id in milestone_sequence
-            if milestone_id not in completed_milestones
-        ),
-        None,
-    )
+    next_milestone = lifecycle.next_milestone_id
     if len(active_plans) == 1:
         active_plan = active_plans[0]
-        if (
-            active_plan.milestone_id != roadmap.current_milestone_id
-            or active_plan.milestone_id != next_milestone
-        ):
+        if not lifecycle.active_plan_matches_current(roadmap):
             issues.append(
                 ValidationIssue(
                     code="PLAN_NOT_NEXT_MILESTONE",
@@ -245,17 +262,51 @@ def validate_repository(
     elif (
         not active_plans
         and next_milestone is not None
-        and not (
-            roadmap.status == "Awaiting"
-            and roadmap.current_milestone_id == next_milestone
-        )
+        and not lifecycle.awaiting_current_is_valid(roadmap)
     ):
+        if lifecycle.last_closed_plan_status == "Completed":
+            guidance = (
+                "; completed milestone awaiting delivery must remain current: "
+                f"{lifecycle.last_closed_milestone_id}"
+            )
+        elif lifecycle.last_closed_plan_status == "Delivered":
+            guidance = (
+                "; delivered milestone handoff must set current milestone to: "
+                f"{next_milestone}"
+            )
+        else:
+            guidance = ""
         issues.append(
             ValidationIssue(
                 code="PLAN_NOT_NEXT_MILESTONE",
                 path=roadmap.path.relative_to(config.repo_root),
                 line=roadmap.status_line,
-                message=f"no active plan for next milestone: {next_milestone}",
+                message=(
+                    f"no active plan for next milestone: {next_milestone}"
+                    f"{guidance}"
+                ),
+            )
+        )
+    if (
+        not active_plans
+        and next_milestone is None
+        and lifecycle.closed_prefix_delivered
+        and (
+            roadmap.status != "Delivered"
+            or roadmap.current_milestone_id
+            != lifecycle.last_closed_milestone_id
+        )
+    ):
+        issues.append(
+            ValidationIssue(
+                code="ROADMAP_TERMINAL_STATE_INVALID",
+                path=roadmap.path.relative_to(config.repo_root),
+                line=roadmap.status_line or 1,
+                message=(
+                    "final delivered milestone requires roadmap "
+                    "Status: Delivered and Current milestone: "
+                    f"{lifecycle.last_closed_milestone_id}"
+                ),
             )
         )
 
@@ -273,8 +324,57 @@ def validate_repository(
                     ),
                 )
             )
+        try:
+            evidence = parse_evidence(config.repo_root, plan.path)
+        except (OSError, UnicodeError) as error:
+            issues.append(
+                ValidationIssue(
+                    code="ARTIFACT_PARSE_ERROR",
+                    path=plan.path.relative_to(config.repo_root),
+                    line=1,
+                    message=f"cannot parse milestone evidence: {error}",
+                )
+            )
+        else:
+            _approved_ids, checkpoint_artifacts = approved_change_data(plan)
+            if plan.status == "Completed":
+                issues.extend(
+                    validate_evidence(
+                        evidence,
+                        plan,
+                        _approved_ids,
+                    )
+                )
+            else:
+                issues.extend(validate_evidence_schema(evidence))
+            issues.extend(
+                validate_traceability_references(
+                    evidence,
+                    plan_status=plan.status,
+                    checkpoint_artifacts=checkpoint_artifacts,
+                )
+            )
+            if (
+                plan.status != "Delivered"
+                and (evidence.commit_draft_count or evidence.commit_message)
+            ):
+                issues.extend(validate_commit_message(evidence))
 
     for change_request in change_requests:
+        metadata = change_request.change_request_metadata
+        if metadata is None or metadata.error is not None:
+            issues.append(
+                ValidationIssue(
+                    code="CHANGE_REQUEST_METADATA_INVALID",
+                    path=change_request.path.relative_to(config.repo_root),
+                    line=metadata.line if metadata is not None else 1,
+                    message=(
+                        metadata.error
+                        if metadata is not None and metadata.error is not None
+                        else "Change Request metadata could not be parsed"
+                    ),
+                )
+            )
         approval_status, approval_line = _approval_status(
             change_request,
             "Change approval",

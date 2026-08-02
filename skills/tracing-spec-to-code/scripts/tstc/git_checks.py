@@ -5,7 +5,6 @@ import re
 import subprocess
 from pathlib import Path
 from pathlib import PurePosixPath
-from typing import Iterable
 
 from .evidence import EvidenceRecord
 from .issues import ValidationIssue, sort_issues
@@ -17,15 +16,6 @@ class GitInspectionError(Exception):
         super().__init__(message)
 
 
-_SUBJECT = re.compile(
-    r"^[a-z][a-z0-9-]*\([a-z0-9][a-z0-9-]*\): \S(?:.*\S)?$"
-)
-_TRAILER = re.compile(r"^([A-Za-z][A-Za-z-]*):[ \t]+(\S(?:.*\S)?)$")
-_TRAILER_NAMES = {
-    "milestone": "Milestone",
-    "requirements": "Requirements",
-    "change-requests": "Change-Requests",
-}
 _WINDOWS_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
 _INVALID_PATH_CHARS = frozenset("*?[")
 _CASE_INSENSITIVE_PATHS = os.name == "nt"
@@ -70,6 +60,23 @@ def _run_git(repo_root: Path, *arguments: str) -> bytes:
             diagnostic or f"git exited with status {result.returncode}"
         )
     return result.stdout
+
+
+def _run_git_status(repo_root: Path, *arguments: str) -> int:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), *arguments],
+            capture_output=True,
+            check=False,
+        )
+    except OSError as error:
+        raise GitInspectionError(f"cannot run git: {error}") from error
+    if result.returncode not in {0, 1}:
+        diagnostic = result.stderr.decode("utf-8", errors="replace").strip()
+        raise GitInspectionError(
+            diagnostic or f"git exited with status {result.returncode}"
+        )
+    return result.returncode
 
 
 def _issue(
@@ -175,9 +182,141 @@ def _get_staged_deletions(repo_root: Path) -> tuple[Path, ...]:
     return _parse_nul_paths(output, source="staged deletion")
 
 
+def path_differs_from_head(repo_root: Path, path: str) -> bool:
+    root = _validate_git_root(repo_root)
+    canonical = _canonical_path(path)
+    if canonical is None:
+        raise GitInspectionError(f"Git path is not canonical: {path}")
+    return bool(
+        _run_git(
+            root,
+            "-c",
+            "core.quotePath=false",
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--",
+            canonical,
+        )
+    )
+
+
+def get_head_commit(repo_root: Path) -> str:
+    root = _validate_git_root(repo_root)
+    value = _run_git(root, "rev-parse", "HEAD").decode(
+        "ascii", errors="strict"
+    ).strip()
+    if re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", value) is None:
+        raise GitInspectionError("Git returned an invalid HEAD commit ID")
+    return value
+
+
+def get_commit_parents(repo_root: Path, commit: str) -> tuple[str, ...]:
+    root = _validate_git_root(repo_root)
+    output = _run_git(root, "rev-list", "--parents", "-n", "1", commit)
+    try:
+        values = output.decode("ascii", errors="strict").strip().split()
+    except UnicodeDecodeError as error:
+        raise GitInspectionError("Git returned invalid commit parents") from error
+    if not values:
+        raise GitInspectionError(f"Git commit does not exist: {commit}")
+    return tuple(values[1:])
+
+
+def get_commit_message(repo_root: Path, commit: str) -> str:
+    root = _validate_git_root(repo_root)
+    output = _run_git(root, "show", "-s", "--format=%B", commit)
+    try:
+        return output.decode("utf-8", errors="strict").rstrip("\r\n")
+    except UnicodeDecodeError as error:
+        raise GitInspectionError("Git commit message is not valid UTF-8") from error
+
+
+def get_commit_paths(repo_root: Path, commit: str) -> tuple[Path, ...]:
+    root = _validate_git_root(repo_root)
+    output = _run_git(
+        root,
+        "-c",
+        "core.quotePath=false",
+        "diff-tree",
+        "--root",
+        "--no-commit-id",
+        "--name-only",
+        "--no-renames",
+        "-r",
+        "-z",
+        commit,
+        "--",
+    )
+    return _parse_nul_paths(output, source="committed")
+
+
+def validate_authoritative_spec(
+    repo_root: Path,
+    spec_path: str,
+) -> list[ValidationIssue]:
+    root = _validate_git_root(repo_root)
+    canonical = _canonical_path(spec_path)
+    if canonical is None:
+        raise GitInspectionError(
+            f"authoritative spec path is not canonical: {spec_path}"
+        )
+    relative = Path(canonical)
+    tracked = bool(
+        _run_git(
+            root,
+            "-c",
+            "core.quotePath=false",
+            "ls-files",
+            "--cached",
+            "-z",
+            "--",
+            canonical,
+        )
+    )
+    head_paths = _parse_nul_paths(
+        _run_git(
+            root,
+            "-c",
+            "core.quotePath=false",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "-z",
+            "HEAD",
+            "--",
+            canonical,
+        ),
+        source="HEAD",
+    )
+    in_head = any(path.as_posix() == canonical for path in head_paths)
+    issues: list[ValidationIssue] = []
+
+    def add(code: str, reason: str) -> None:
+        issues.append(
+            ValidationIssue(
+                code=code,
+                path=relative,
+                line=0,
+                message=f"authoritative spec {reason}: {canonical}",
+            )
+        )
+
+    if not tracked:
+        add("SPEC_NOT_TRACKED", "is not tracked by Git")
+    if not in_head:
+        add("SPEC_NOT_IN_HEAD", "does not exist in recorded HEAD")
+    if tracked and in_head:
+        if _run_git_status(root, "diff", "--cached", "--quiet", "--", canonical):
+            add("SPEC_INDEX_DIRTY", "index differs from recorded HEAD")
+        if _run_git_status(root, "diff", "--quiet", "--", canonical):
+            add("SPEC_WORKTREE_DIRTY", "worktree differs from the index")
+    return sort_issues(issues)
 def validate_staged_scope(
     record: EvidenceRecord,
     staged_paths: tuple[Path, ...],
+    approved_baseline_ownership_transfers: tuple[str, ...] = (),
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     scope_counts: dict[str, int] = {}
@@ -255,11 +394,17 @@ def validate_staged_scope(
                 )
             )
 
+    approved_transfer_identities = {
+        _path_identity(canonical)
+        for path in approved_baseline_ownership_transfers
+        if (canonical := _canonical_path(path)) is not None
+    }
     for path in record.baseline_dirty_paths:
         canonical = _canonical_path(path)
         if (
             canonical is not None
             and _path_identity(canonical) in canonical_scope
+            and _path_identity(canonical) not in approved_transfer_identities
         ):
             issues.append(
                 _issue(
@@ -295,62 +440,4 @@ def validate_staged_scope(
                 f"staged paths are outside commit scope: {', '.join(extra)}",
             )
         )
-    return sort_issues(issues)
-
-
-def validate_commit_message(
-    record: EvidenceRecord,
-) -> list[ValidationIssue]:
-    issues: list[ValidationIssue] = []
-
-    def invalid(message: str) -> None:
-        issues.append(
-            _issue(
-                record,
-                "COMMIT_MESSAGE_INVALID",
-                record.commit_message_line,
-                message,
-            )
-        )
-
-    lines = record.commit_message.splitlines()
-    if not lines or not _SUBJECT.fullmatch(lines[0]):
-        invalid("commit subject must match type(scope): outcome")
-    if len(lines) < 3 or lines[1] != "":
-        invalid("commit trailers must follow the subject after one blank line")
-        trailer_lines: Iterable[str] = lines[1:]
-    else:
-        trailer_lines = lines[2:]
-
-    trailers: dict[str, list[str]] = {}
-    for line in trailer_lines:
-        if not line:
-            invalid("commit trailer block cannot contain blank lines")
-            continue
-        match = _TRAILER.fullmatch(line)
-        if not match:
-            invalid(f"malformed commit trailer: {line}")
-            continue
-        key = match.group(1).casefold()
-        if key not in _TRAILER_NAMES:
-            invalid(f"unknown commit trailer: {match.group(1)}")
-            continue
-        trailers.setdefault(key, []).append(match.group(2))
-
-    expected = {
-        "milestone": record.milestone_name,
-        "requirements": ", ".join(record.plan_requirement_ids),
-    }
-    if record.approved_change_requests:
-        expected["change-requests"] = ", ".join(record.approved_change_requests)
-    for key, value in expected.items():
-        actual = trailers.get(key, [])
-        if actual != [value]:
-            invalid(
-                f"{_TRAILER_NAMES[key]} trailer must appear exactly once "
-                f"and equal: {value}"
-            )
-    for key in _TRAILER_NAMES:
-        if key not in expected and trailers.get(key):
-            invalid(f"{_TRAILER_NAMES[key]} trailer is not allowed")
     return sort_issues(issues)

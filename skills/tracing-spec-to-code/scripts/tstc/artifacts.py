@@ -6,6 +6,10 @@ from enum import Enum
 from pathlib import Path
 from string import Formatter
 
+from .change_requests import (
+    ChangeRequestMetadata,
+    parse_change_request_metadata,
+)
 from .config import ResolvedConfig
 
 
@@ -57,6 +61,13 @@ class ArtifactRef:
     current_milestone_id: str | None = None
     current_milestone_line: int = 0
     current_milestone_count: int = 0
+    change_request_metadata: ChangeRequestMetadata | None = None
+    spec_path: str | None = None
+    spec_path_line: int = 0
+    spec_path_count: int = 0
+    roadmap_path: str | None = None
+    roadmap_path_line: int = 0
+    roadmap_path_count: int = 0
 
 
 class ArtifactParseError(Exception):
@@ -101,6 +112,9 @@ _METADATA_FIELD = re.compile(
     r"\s*[:：]\s*(?P<value>.*?)\s*$",
 )
 _CURRENT_MILESTONE_VALUE = re.compile(r"M\d{2}\Z", re.IGNORECASE)
+_PATH_METADATA_FIELD = re.compile(
+    r"^-\s*(?P<label>Spec|Roadmap)\s*[:：]\s*(?P<value>.*?)\s*$",
+)
 _STATUS_PREFIXES = (
     "In Progress",
     "Completed",
@@ -124,6 +138,18 @@ def _normalized_status(value: str) -> str | None:
         ):
             return status
     return None
+
+
+def _metadata_path(value: str) -> str:
+    stripped = value.strip()
+    if (
+        len(stripped) >= 2
+        and stripped.startswith("`")
+        and stripped.endswith("`")
+        and "`" not in stripped[1:-1]
+    ):
+        return stripped[1:-1]
+    return stripped
 
 
 def _template_pattern(template: str, feature_slug: str) -> re.Pattern[str]:
@@ -189,6 +215,17 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
     current_milestone_id: str | None = None
     current_milestone_line = 0
     current_milestone_count = 0
+    change_request_metadata = (
+        parse_change_request_metadata(lines)
+        if kind == ArtifactKind.CHANGE_REQUEST
+        else None
+    )
+    spec_path: str | None = None
+    spec_path_line = 0
+    spec_path_count = 0
+    roadmap_path: str | None = None
+    roadmap_path_line = 0
+    roadmap_path_count = 0
     in_top_metadata = True
     current_level_two_heading = ""
     for line_number, line in enumerate(lines, start=1):
@@ -245,6 +282,20 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
             )
 
         if in_top_metadata:
+            path_metadata = _PATH_METADATA_FIELD.match(line)
+            if path_metadata:
+                label = path_metadata.group("label")
+                value = _metadata_path(path_metadata.group("value"))
+                if label == "Spec":
+                    spec_path_count += 1
+                    if spec_path_count == 1:
+                        spec_path = value
+                        spec_path_line = line_number
+                else:
+                    roadmap_path_count += 1
+                    if roadmap_path_count == 1:
+                        roadmap_path = value
+                        roadmap_path_line = line_number
             metadata = _METADATA_FIELD.match(line)
             if metadata:
                 label = metadata.group("label")
@@ -420,6 +471,13 @@ def _parse_artifact(kind: ArtifactKind, path: Path) -> ArtifactRef:
         current_milestone_id=current_milestone_id,
         current_milestone_line=current_milestone_line,
         current_milestone_count=current_milestone_count,
+        change_request_metadata=change_request_metadata,
+        spec_path=spec_path,
+        spec_path_line=spec_path_line,
+        spec_path_count=spec_path_count,
+        roadmap_path=roadmap_path,
+        roadmap_path_line=roadmap_path_line,
+        roadmap_path_count=roadmap_path_count,
     )
 
 

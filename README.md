@@ -56,6 +56,12 @@ Code + Tests
 Evidence + Scoped Local Commit
 ```
 
+`Current milestone` stays on the plan being executed or delivered, including
+after its status becomes `Completed` and until its commit and post-commit
+verification succeed. The ordered roadmap shows the next milestone; it becomes
+current in `Awaiting` state only after the preceding plan is marked
+`Delivered`, even if its own detailed plan has not yet been created.
+
 Three explicit gates keep the human in control:
 
 1. **Requirements confirmation** approves the spec.

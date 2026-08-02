@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 from .issues import ValidationIssue, sort_issues
+from .markdown_values import ParsedMarkdownValues, parse_markdown_values
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,13 @@ class CommitScopeRow:
 
 
 @dataclass(frozen=True)
+class EvidenceValueError:
+    field: str
+    line: int
+    message: str
+
+
+@dataclass(frozen=True)
 class EvidenceRecord:
     plan_path: Path
     milestone_id: str
@@ -54,6 +63,8 @@ class EvidenceRecord:
     baseline_dirty_paths: tuple[str, ...]
     commit_scope: tuple[CommitScopeRow, ...]
     commit_message: str
+    baseline_ownership_transfers: tuple[str, ...] = ()
+    value_errors: tuple[EvidenceValueError, ...] = ()
     milestone_name: str = ""
     plan_requirement_ids: tuple[str, ...] = ()
     repo_root: Path | None = None
@@ -64,10 +75,12 @@ class EvidenceRecord:
     approved_change_requests_count: int = 0
     deviations_count: int = 0
     baseline_dirty_paths_count: int = 0
+    baseline_ownership_transfers_count: int = 0
     commit_draft_count: int = 0
     approved_change_requests_valid: bool = True
     deviations_valid: bool = True
     baseline_dirty_paths_valid: bool = True
+    baseline_ownership_transfers_valid: bool = True
     traceability_line: int = 0
     task_status_line: int = 0
     verification_line: int = 0
@@ -75,6 +88,7 @@ class EvidenceRecord:
     approved_change_requests_line: int = 0
     deviations_line: int = 0
     baseline_dirty_paths_line: int = 0
+    baseline_ownership_transfers_line: int = 0
     commit_message_line: int = 0
 
 
@@ -88,7 +102,8 @@ _REQUIREMENTS = re.compile(
     re.IGNORECASE,
 )
 _EVIDENCE_FIELD = re.compile(
-    r"^-\s*(Approved Change Requests|Deviations|Baseline dirty paths)"
+    r"^-\s*(Approved Change Requests|Deviations|Baseline dirty paths|"
+    r"Baseline ownership transfers)"
     r"\s*[:：]\s*(.*?)\s*$",
     re.IGNORECASE,
 )
@@ -96,6 +111,7 @@ _REQUIREMENT_ID = re.compile(r"REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}\Z")
 _CHANGE_REQUEST_ID = re.compile(r"CR-\d+\Z", re.IGNORECASE)
 _WINDOWS_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
 _INVALID_PATH_CHARS = frozenset("*?[")
+_TRACEABILITY_SELECTOR = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]*\Z")
 
 
 def _heading_name(value: str) -> str:
@@ -126,15 +142,17 @@ def _clean_cell(value: str) -> str:
     return stripped
 
 
-def _split_values(value: str) -> tuple[str, ...]:
-    cleaned = _clean_cell(value)
-    if not cleaned or cleaned.casefold() == "none":
-        return ()
-    return tuple(
-        item
-        for part in cleaned.split(",")
-        if (item := _clean_cell(part))
-    )
+def _parsed_values(
+    value: str,
+    *,
+    field: str,
+    line: int,
+    errors: list[EvidenceValueError],
+) -> ParsedMarkdownValues:
+    parsed = parse_markdown_values(value)
+    if parsed.error is not None:
+        errors.append(EvidenceValueError(field, line, parsed.error))
+    return parsed
 
 
 def _parse_table(
@@ -162,47 +180,64 @@ def _parse_table(
     )
 
 
-def _field_values(value: str) -> tuple[str, ...]:
-    return _split_values(value)
-
-
-def _change_request_values(value: str) -> tuple[tuple[str, ...], bool]:
-    if not value.strip():
+def _change_request_values(
+    value: str,
+    parsed: ParsedMarkdownValues,
+) -> tuple[tuple[str, ...], bool]:
+    stripped = value.strip()
+    if not stripped:
         return (), False
-    values = _field_values(value)
+    if stripped.casefold() == "none":
+        return (), parsed.error is None
+    values = parsed.values
     return (
         tuple(item.upper() for item in values),
-        value.strip().casefold() == "none"
-        or (
-            bool(values)
-            and all(_CHANGE_REQUEST_ID.fullmatch(item) for item in values)
-        ),
+        parsed.error is None
+        and bool(values)
+        and all(_CHANGE_REQUEST_ID.fullmatch(item) for item in values),
     )
 
 
-def _evidence_set_values(value: str) -> tuple[tuple[str, ...], bool]:
+def _evidence_set_values(
+    value: str,
+    parsed: ParsedMarkdownValues,
+) -> tuple[tuple[str, ...], bool]:
     stripped = value.strip()
-    values = _field_values(value)
+    values = parsed.values
+    if stripped.casefold() == "none":
+        return (), parsed.error is None
     contains_none = any(item.casefold() == "none" for item in values)
-    valid = bool(stripped) and (
-        stripped.casefold() == "none"
-        or (
-            bool(values)
-            and not contains_none
-            and all(
-                item.casefold() not in {"pending", "skipped"}
-                for item in values
-            )
+    valid = parsed.error is None and bool(stripped) and (
+        bool(values)
+        and not contains_none
+        and all(
+            item.casefold() not in {"pending", "skipped"}
+            for item in values
         )
     )
     return values, valid
 
 
-def _actual_verification_passed(value: str) -> bool:
+def _deviations_values(value: str) -> tuple[tuple[str, ...], bool]:
+    stripped = value.strip()
+    if stripped.casefold() == "none":
+        return (), True
+    if not stripped or stripped.casefold() in {"pending", "skipped"}:
+        return (), False
+    if any(
+        item.strip().casefold() in {"none", "pending", "skipped"}
+        for item in stripped.split(",")
+    ):
+        return (stripped,), False
+    return (stripped,), True
+
+
+def task_actual_verification_passed(value: str) -> bool:
     match = re.fullmatch(
         r"(?:[A-Za-z0-9_.\-/`]+:\s*)?"
         r"(?:(\d+)/(\d+)\s+)?"
-        r"pass(?:ed)?",
+        r"pass(?:ed)?"
+        r"(?:\.\s+\S.*)?",
         value.strip(),
         re.IGNORECASE,
     )
@@ -210,6 +245,15 @@ def _actual_verification_passed(value: str) -> bool:
         return False
     passed, total = match.groups()
     return passed is None or (int(total) > 0 and int(passed) == int(total))
+
+
+def verification_actual_recorded(value: str) -> bool:
+    stripped = value.strip()
+    return bool(stripped) and stripped.casefold() not in {
+        "none",
+        "pending",
+        "skipped",
+    }
 
 
 def _fence_opening(line: str) -> tuple[str, int] | None:
@@ -245,8 +289,10 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     approved_change_requests: list[str] = []
     deviations: list[str] = []
     baseline_dirty_paths: list[str] = []
+    baseline_ownership_transfers: list[str] = []
     commit_scope: list[CommitScopeRow] = []
     commit_message = ""
+    value_errors: list[EvidenceValueError] = []
 
     traceability_table_count = 0
     task_status_table_count = 0
@@ -255,10 +301,12 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     approved_change_requests_count = 0
     deviations_count = 0
     baseline_dirty_paths_count = 0
+    baseline_ownership_transfers_count = 0
     commit_draft_count = 0
     approved_change_requests_valid = True
     deviations_valid = True
     baseline_dirty_paths_valid = True
+    baseline_ownership_transfers_valid = True
 
     traceability_line = 0
     task_status_line = 0
@@ -267,6 +315,7 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
     approved_change_requests_line = 0
     deviations_line = 0
     baseline_dirty_paths_line = 0
+    baseline_ownership_transfers_line = 0
     commit_message_line = 0
 
     level_two = ""
@@ -352,9 +401,15 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
                 )
             requirements = _REQUIREMENTS.match(line)
             if requirements and not plan_requirement_ids:
+                parsed = _parsed_values(
+                    requirements.group(1),
+                    field="Requirements",
+                    line=index + 1,
+                    errors=value_errors,
+                )
                 plan_requirement_ids = tuple(
                     value
-                    for value in _field_values(requirements.group(1))
+                    for value in parsed.values
                     if _REQUIREMENT_ID.fullmatch(value)
                 )
 
@@ -369,7 +424,13 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
                     approved_change_requests_line = (
                         approved_change_requests_line or line_number
                     )
-                    parsed, valid = _change_request_values(value)
+                    parsed_values = _parsed_values(
+                        value,
+                        field="Approved Change Requests",
+                        line=line_number,
+                        errors=value_errors,
+                    )
+                    parsed, valid = _change_request_values(value, parsed_values)
                     approved_change_requests.extend(parsed)
                     approved_change_requests_valid = (
                         approved_change_requests_valid and valid
@@ -377,18 +438,40 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
                 elif label == "deviations":
                     deviations_count += 1
                     deviations_line = deviations_line or line_number
-                    parsed, valid = _evidence_set_values(value)
+                    parsed, valid = _deviations_values(value)
                     deviations.extend(parsed)
                     deviations_valid = deviations_valid and valid
-                else:
+                elif label == "baseline dirty paths":
                     baseline_dirty_paths_count += 1
                     baseline_dirty_paths_line = (
                         baseline_dirty_paths_line or line_number
                     )
-                    parsed, valid = _evidence_set_values(value)
+                    parsed_values = _parsed_values(
+                        value,
+                        field="Baseline dirty paths",
+                        line=line_number,
+                        errors=value_errors,
+                    )
+                    parsed, valid = _evidence_set_values(value, parsed_values)
                     baseline_dirty_paths.extend(parsed)
                     baseline_dirty_paths_valid = (
                         baseline_dirty_paths_valid and valid
+                    )
+                else:
+                    baseline_ownership_transfers_count += 1
+                    baseline_ownership_transfers_line = (
+                        baseline_ownership_transfers_line or line_number
+                    )
+                    parsed_values = _parsed_values(
+                        value,
+                        field="Baseline ownership transfers",
+                        line=line_number,
+                        errors=value_errors,
+                    )
+                    parsed, valid = _evidence_set_values(value, parsed_values)
+                    baseline_ownership_transfers.extend(parsed)
+                    baseline_ownership_transfers_valid = (
+                        baseline_ownership_transfers_valid and valid
                     )
 
         parsed_table = _parse_table(lines, index)
@@ -403,12 +486,30 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
                 traceability_table_count += 1
                 traceability_line = traceability_line or table_line
                 for line_number, cells in rows:
+                    requirements = _parsed_values(
+                        cells[1],
+                        field="Requirements",
+                        line=line_number,
+                        errors=value_errors,
+                    )
+                    implementation = _parsed_values(
+                        cells[2],
+                        field="Implementation",
+                        line=line_number,
+                        errors=value_errors,
+                    )
+                    tests = _parsed_values(
+                        cells[3],
+                        field="Tests",
+                        line=line_number,
+                        errors=value_errors,
+                    )
                     traceability.append(
                         TraceabilityRow(
                             task_id=_clean_cell(cells[0]),
-                            requirement_ids=_split_values(cells[1]),
-                            implementation=_split_values(cells[2]),
-                            tests=_split_values(cells[3]),
+                            requirement_ids=requirements.values,
+                            implementation=implementation.values,
+                            tests=tests.values,
                             line=line_number,
                         )
                     )
@@ -478,6 +579,8 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
         baseline_dirty_paths=tuple(baseline_dirty_paths),
         commit_scope=tuple(commit_scope),
         commit_message=commit_message,
+        baseline_ownership_transfers=tuple(baseline_ownership_transfers),
+        value_errors=tuple(value_errors),
         milestone_name=milestone_name,
         plan_requirement_ids=plan_requirement_ids,
         repo_root=resolved_root,
@@ -488,10 +591,16 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
         approved_change_requests_count=approved_change_requests_count,
         deviations_count=deviations_count,
         baseline_dirty_paths_count=baseline_dirty_paths_count,
+        baseline_ownership_transfers_count=(
+            baseline_ownership_transfers_count
+        ),
         commit_draft_count=commit_draft_count,
         approved_change_requests_valid=approved_change_requests_valid,
         deviations_valid=deviations_valid,
         baseline_dirty_paths_valid=baseline_dirty_paths_valid,
+        baseline_ownership_transfers_valid=(
+            baseline_ownership_transfers_valid
+        ),
         traceability_line=traceability_line,
         task_status_line=task_status_line,
         verification_line=verification_line,
@@ -499,6 +608,9 @@ def parse_evidence(repo_root: Path, plan_path: Path) -> EvidenceRecord:
         approved_change_requests_line=approved_change_requests_line,
         deviations_line=deviations_line,
         baseline_dirty_paths_line=baseline_dirty_paths_line,
+        baseline_ownership_transfers_line=(
+            baseline_ownership_transfers_line
+        ),
         commit_message_line=commit_message_line,
     )
 
@@ -566,7 +678,22 @@ def _path_error(
     allow_test_reference: bool = False,
     repo_root: Path | None = None,
 ) -> str | None:
-    path_value = value.split("::", 1)[0] if allow_test_reference else value
+    if allow_test_reference:
+        selector_count = value.count("::")
+        if selector_count > 1:
+            return "test reference must contain at most one selector"
+        if selector_count == 1:
+            path_value, selector = value.split("::", 1)
+            if not selector:
+                return "test selector is missing"
+            if _TRACEABILITY_SELECTOR.fullmatch(selector) is None:
+                return "test selector is not canonical"
+        else:
+            path_value = value
+    else:
+        if "::" in value:
+            return "implementation paths cannot contain selectors"
+        path_value = value
     path_value = path_value.strip()
     if not path_value or path_value.casefold() == "none":
         return "path is missing"
@@ -590,7 +717,150 @@ def _path_error(
         return "absolute paths are not allowed"
     if repo_root is not None and (repo_root / path_value).is_dir():
         return "directory paths are not allowed"
+    if (
+        len(raw_parts) == 1
+        and "." not in path_value
+        and re.fullmatch(r"[A-Z][A-Z_]*", path_value) is None
+        and not (
+            repo_root is not None
+            and (repo_root / path_value).is_file()
+        )
+    ):
+        return "root path is not a canonical file name"
     return None
+
+
+def validate_evidence_schema(record: EvidenceRecord) -> list[ValidationIssue]:
+    issues = [
+        _issue(
+            record,
+            (
+                "TRACEABILITY_PATH_INVALID"
+                if error.field in {"Implementation", "Tests"}
+                else "EVIDENCE_VALUE_INVALID"
+            ),
+            error.line,
+            f"{error.field} contains invalid Markdown values: {error.message}",
+        )
+        for error in record.value_errors
+    ]
+    if record.baseline_ownership_transfers_count > 1:
+        issues.append(
+            _issue(
+                record,
+                "EVIDENCE_VALUE_INVALID",
+                record.baseline_ownership_transfers_line,
+                "Baseline ownership transfers must appear at most once",
+            )
+        )
+    return issues
+
+
+def validate_traceability_references(
+    record: EvidenceRecord,
+    *,
+    plan_status: str | None,
+    checkpoint_artifacts: Iterable[str] = (),
+) -> list[ValidationIssue]:
+    """Validate Git-independent traceability path and delivery references."""
+    issues: list[ValidationIssue] = []
+    strict_delivery = plan_status == "Completed"
+    scope_paths = {
+        row.path.casefold() if os.name == "nt" else row.path
+        for row in record.commit_scope
+        if _path_error(row.path, repo_root=record.repo_root) is None
+    }
+    checkpoint_paths = {
+        path.casefold() if os.name == "nt" else path
+        for path in checkpoint_artifacts
+        if _path_error(path, repo_root=record.repo_root) is None
+    }
+    plan_evidence = f"{record.plan_path.as_posix()}::Verification"
+
+    def validate_values(
+        row: TraceabilityRow,
+        values: tuple[str, ...],
+        *,
+        field: str,
+        allow_selector: bool,
+    ) -> None:
+        identities: set[str] = set()
+        for value in values:
+            error = _path_error(
+                value,
+                allow_test_reference=allow_selector,
+                repo_root=record.repo_root,
+            )
+            if error is not None:
+                issues.append(
+                    _issue(
+                        record,
+                        "TRACEABILITY_PATH_INVALID",
+                        row.line,
+                        f"invalid {field} reference {value}: {error}",
+                    )
+                )
+                continue
+            path = value.split("::", 1)[0]
+            identity = path.casefold() if os.name == "nt" else path
+            reference_identity = value.casefold() if os.name == "nt" else value
+            if reference_identity in identities:
+                issues.append(
+                    _issue(
+                        record,
+                        "TRACEABILITY_PATH_INVALID",
+                        row.line,
+                        f"duplicate {field} reference identity: {value}",
+                    )
+                )
+                continue
+            identities.add(reference_identity)
+
+            if allow_selector and path == record.plan_path.as_posix():
+                if value != plan_evidence:
+                    issues.append(
+                        _issue(
+                            record,
+                            "TRACEABILITY_REFERENCE_INVALID",
+                            row.line,
+                            (
+                                "milestone plan evidence must equal the canonical "
+                                f"reference: {plan_evidence}"
+                            ),
+                        )
+                    )
+                continue
+            if strict_delivery and (
+                identity not in scope_paths
+                and identity not in checkpoint_paths
+            ):
+                issues.append(
+                    _issue(
+                        record,
+                        "TRACEABILITY_REFERENCE_INVALID",
+                        row.line,
+                        (
+                            f"{field} path is not mapped to Commit scope, "
+                            "fact-change checkpoint artifacts, or canonical "
+                            f"plan evidence: {path}"
+                        ),
+                    )
+                )
+
+    for row in record.traceability:
+        validate_values(
+            row,
+            row.implementation,
+            field="implementation",
+            allow_selector=False,
+        )
+        validate_values(
+            row,
+            row.tests,
+            field="test",
+            allow_selector=True,
+        )
+    return sort_issues(issues)
 
 
 def validate_evidence(
@@ -598,7 +868,7 @@ def validate_evidence(
     known_plan: object,
     approved_change_requests: Iterable[object],
 ) -> list[ValidationIssue]:
-    issues: list[ValidationIssue] = []
+    issues = validate_evidence_schema(record)
     expected_tasks = tuple(getattr(known_plan, "task_ids", ()))
     expected_task_set = set(expected_tasks)
     expected_task_requirements = _task_requirement_ids(known_plan)
@@ -747,7 +1017,7 @@ def validate_evidence(
                     f"task status is not Completed: {row.task_id}",
                 )
             )
-        if not _actual_verification_passed(row.actual_verification):
+        if not task_actual_verification_passed(row.actual_verification):
             issues.append(
                 _issue(
                     record,
@@ -798,6 +1068,21 @@ def validate_evidence(
                 "baseline dirty paths evidence must appear exactly once",
             )
         )
+    if (
+        record.baseline_ownership_transfers_count > 1
+        or (
+            record.baseline_ownership_transfers_count == 1
+            and not record.baseline_ownership_transfers_valid
+        )
+    ):
+        issues.append(
+            _issue(
+                record,
+                "EVIDENCE_INCOMPLETE",
+                record.baseline_ownership_transfers_line,
+                "baseline ownership transfers evidence is invalid",
+            )
+        )
 
     if record.verification_table_count != 1:
         issues.append(
@@ -827,7 +1112,7 @@ def validate_evidence(
         if (
             missing_field
             or row.result.casefold() != "pass"
-            or not _actual_verification_passed(row.actual)
+            or not verification_actual_recorded(row.actual)
         ):
             issues.append(
                 _issue(

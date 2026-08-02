@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-import re
 from dataclasses import replace
 from pathlib import Path
-from string import Formatter
 
 from .artifacts import ArtifactKind, ArtifactParseError, discover_artifacts
+from .change_checkpoint import (
+    resolve_change_checkpoint_context,
+    validate_recorded_checkpoint_identity,
+)
+from .change_requests import change_request_id_from_filename
+from .commit_message import validate_commit_message
 from .config import load_config
 from .evidence import parse_evidence, validate_evidence
 from .git_checks import (
@@ -15,10 +19,12 @@ from .git_checks import (
     _get_unstaged_paths,
     _path_identity,
     get_staged_paths,
-    validate_commit_message,
+    path_differs_from_head,
+    validate_authoritative_spec,
     validate_staged_scope,
 )
 from .issues import ValidationIssue, sort_issues
+from .lifecycle import analyze_milestone_lifecycle
 from .validation import validate_repository
 
 
@@ -26,138 +32,6 @@ class PrecommitRuntimeError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
-
-
-class _ChangeRequestMetadataError(Exception):
-    def __init__(self, line: int, message: str) -> None:
-        self.line = line
-        self.message = message
-        super().__init__(message)
-
-
-_AFFECTED_TASKS = re.compile(
-    r"^ {0,3}-[ \t]+(?:Affected[ \t]+tasks|影响[ \t]*Task)"
-    r"[ \t]*[:：][ \t]*(.*?)[ \t]*$",
-    re.IGNORECASE,
-)
-_TASK_ID = re.compile(r"M\d{2}-T\d{2}\Z", re.IGNORECASE)
-_LEVEL_TWO_HEADING = re.compile(r"^ {0,3}##(?!#)(?:[ \t]+|$)")
-_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
-
-
-def _without_html_comments(
-    line: str,
-    in_comment: bool,
-) -> tuple[str, bool]:
-    visible: list[str] = []
-    cursor = 0
-    while cursor < len(line):
-        if in_comment:
-            closing = line.find("-->", cursor)
-            if closing < 0:
-                return "".join(visible), True
-            cursor = closing + 3
-            in_comment = False
-            continue
-        opening = line.find("<!--", cursor)
-        if opening < 0:
-            visible.append(line[cursor:])
-            break
-        visible.append(line[cursor:opening])
-        cursor = opening + 4
-        in_comment = True
-    return "".join(visible), in_comment
-
-
-def _parse_affected_tasks(path: Path) -> tuple[str, ...]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except (OSError, UnicodeError) as error:
-        raise PrecommitRuntimeError(
-            f"cannot read approved change_request metadata: {path}: {error}"
-        ) from error
-
-    values: list[tuple[int, str]] = []
-    in_comment = False
-    fence_character = ""
-    fence_length = 0
-    for line_number, raw_line in enumerate(lines, start=1):
-        line, in_comment = _without_html_comments(raw_line, in_comment)
-        if fence_character:
-            closing = re.fullmatch(
-                rf" {{0,3}}{re.escape(fence_character)}"
-                rf"{{{fence_length},}}[ \t]*",
-                line,
-            )
-            if closing:
-                fence_character = ""
-                fence_length = 0
-            continue
-        fence = _FENCE.match(line)
-        if fence:
-            marker = fence.group(1)
-            fence_character = marker[0]
-            fence_length = len(marker)
-            continue
-        if _LEVEL_TWO_HEADING.match(line):
-            break
-        field = _AFFECTED_TASKS.fullmatch(line)
-        if field:
-            values.append((line_number, field.group(1).strip()))
-
-    if len(values) != 1 or not values[0][1]:
-        raise _ChangeRequestMetadataError(
-            values[0][0] if values else 1,
-            "approved change_request must contain exactly one non-empty "
-            "Affected tasks metadata field",
-        )
-    line_number, value = values[0]
-    raw_tasks = re.split(r"[,，]", value)
-    if not raw_tasks or any(not value.strip() for value in raw_tasks):
-        raise _ChangeRequestMetadataError(
-            line_number,
-            "approved change_request has invalid Affected tasks metadata",
-        )
-    tasks = tuple(value.strip().upper() for value in raw_tasks)
-    if (
-        any(_TASK_ID.fullmatch(task) is None for task in tasks)
-        or len(set(tasks)) != len(tasks)
-    ):
-        raise _ChangeRequestMetadataError(
-            line_number,
-            "approved change_request has invalid Affected tasks metadata",
-        )
-    return tuple(sorted(tasks))
-
-
-def _change_request_id_from_filename(
-    filename_template: str,
-    feature_slug: str,
-    filename: str,
-) -> str:
-    parts: list[str] = []
-    captured_change_request = False
-    for literal, field_name, _, _ in Formatter().parse(filename_template):
-        parts.append(re.escape(literal))
-        if field_name is None:
-            continue
-        if field_name == "feature":
-            parts.append(re.escape(feature_slug))
-        elif field_name == "change_request":
-            if captured_change_request:
-                parts.append(r"(?P=change_request)")
-            else:
-                parts.append(r"(?P<change_request>\d{2})")
-                captured_change_request = True
-        elif field_name == "change_request_slug":
-            parts.append(r"[A-Za-z0-9][A-Za-z0-9-]*")
-    match = re.fullmatch("".join(parts), filename)
-    if match is None or not captured_change_request:
-        raise PrecommitRuntimeError(
-            "cannot derive change_request ID from configured filename template: "
-            f"{filename}"
-        )
-    return f"CR-{int(match.group('change_request')):02d}"
 
 
 def validate_precommit(
@@ -212,6 +86,25 @@ def validate_precommit(
             "selected --plan is not an exact discovered milestone plan"
         )
     known_plan = plans[0]
+    roadmaps = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.ROADMAP
+    ]
+    discovered_plans = [
+        artifact
+        for artifact in artifacts
+        if artifact.kind == ArtifactKind.MILESTONE_PLAN
+    ]
+    if len(roadmaps) != 1:
+        raise PrecommitRuntimeError(
+            "selected --plan does not match the roadmap current milestone"
+        )
+    lifecycle = analyze_milestone_lifecycle(roadmaps[0], discovered_plans)
+    if not lifecycle.selected_plan_matches_current(roadmaps[0], known_plan):
+        raise PrecommitRuntimeError(
+            "selected --plan does not match the roadmap current milestone"
+        )
     approved_candidates = [
         artifact
         for artifact in artifacts
@@ -224,10 +117,32 @@ def validate_precommit(
         )
     ]
     issues = list(repository_issues)
+    specs = [
+        artifact for artifact in artifacts if artifact.kind == ArtifactKind.SPEC
+    ]
+    expected_spec_path = specs[0].path.relative_to(root).as_posix()
+    for referencing_artifact in (roadmaps[0], known_plan):
+        if (
+            referencing_artifact.spec_path_count != 1
+            or _canonical_path(referencing_artifact.spec_path or "")
+            != expected_spec_path
+        ):
+            issues.append(
+                ValidationIssue(
+                    code="SPEC_PATH_INVALID",
+                    path=referencing_artifact.path.relative_to(root),
+                    line=referencing_artifact.spec_path_line or 1,
+                    message=(
+                        "Spec metadata must be the repository-relative "
+                        "canonical path to the authoritative spec: "
+                        f"{expected_spec_path}"
+                    ),
+                )
+            )
     candidate_pairs = [
         (
             artifact,
-            _change_request_id_from_filename(
+            change_request_id_from_filename(
                 config.change_request_filename_template,
                 config.feature_slug,
                 artifact.path.name,
@@ -262,39 +177,42 @@ def validate_precommit(
     parsed_candidates = []
     metadata_invalid = False
     for artifact, change_request_id in candidate_pairs:
-        try:
-            affected_tasks = _parse_affected_tasks(artifact.path)
-        except _ChangeRequestMetadataError as error:
+        metadata = artifact.change_request_metadata
+        if metadata is None or metadata.error is not None:
             metadata_invalid = True
             issues.append(
                 ValidationIssue(
                     code="EVIDENCE_INCOMPLETE",
                     path=artifact.path.relative_to(root),
-                    line=error.line,
-                    message=error.message,
+                    line=metadata.line if metadata is not None else 1,
+                    message=(
+                        metadata.error
+                        if metadata is not None and metadata.error is not None
+                        else "Change Request metadata could not be parsed"
+                    ),
                 )
             )
             continue
-        parsed_candidates.append((artifact, change_request_id, affected_tasks))
-    if repository_issues or metadata_invalid:
+        parsed_candidates.append(
+            (artifact, change_request_id, metadata.affected_tasks)
+        )
+    artifact_gate_codes = {
+        "COMMIT_MESSAGE_INVALID",
+        "TRACEABILITY_PATH_INVALID",
+        "TRACEABILITY_REFERENCE_INVALID",
+    }
+    blocking_repository_issues = [
+        issue
+        for issue in repository_issues
+        if issue.code not in artifact_gate_codes
+    ]
+    if blocking_repository_issues or metadata_invalid:
         unique = {
             (issue.code, issue.path, issue.line, issue.message): issue
             for issue in issues
         }
         return sort_issues(unique.values())
 
-    roadmaps = [
-        artifact
-        for artifact in artifacts
-        if artifact.kind == ArtifactKind.ROADMAP
-    ]
-    if (
-        len(roadmaps) != 1
-        or known_plan.milestone_id != roadmaps[0].current_milestone_id
-    ):
-        raise PrecommitRuntimeError(
-            "selected --plan does not match the roadmap current milestone"
-        )
     selected_task_ids = set(known_plan.task_ids)
     approved_pairs = [
         (artifact, change_request_id)
@@ -324,12 +242,26 @@ def validate_precommit(
                 canonical,
             )
 
-    require_scope_path(record.plan_path.as_posix())
+    try:
+        if path_differs_from_head(root, record.plan_path.as_posix()):
+            require_scope_path(record.plan_path.as_posix())
+    except GitInspectionError as error:
+        raise PrecommitRuntimeError(error.message) from error
     for artifact in artifacts:
         if artifact.kind == ArtifactKind.ROADMAP:
-            require_scope_path(artifact.path.relative_to(root).as_posix())
+            relative = artifact.path.relative_to(root).as_posix()
+            try:
+                if path_differs_from_head(root, relative):
+                    require_scope_path(relative)
+            except GitInspectionError as error:
+                raise PrecommitRuntimeError(error.message) from error
     for artifact in approved_change_requests:
-        require_scope_path(artifact.path.relative_to(root).as_posix())
+        relative = artifact.path.relative_to(root).as_posix()
+        try:
+            if path_differs_from_head(root, relative):
+                require_scope_path(relative)
+        except GitInspectionError as error:
+            raise PrecommitRuntimeError(error.message) from error
     for row in record.traceability:
         for value in row.implementation:
             require_scope_path(value)
@@ -356,13 +288,106 @@ def validate_precommit(
                 ),
             )
         )
+    for artifact, change_request_id in approved_pairs:
+        metadata = artifact.change_request_metadata
+        if metadata is None or metadata.authoritative_spec_change is not True:
+            continue
+        context = resolve_change_checkpoint_context(
+            root,
+            requested_plan,
+            artifact.path,
+            config_path,
+        )
+        checkpoint_issues = validate_recorded_checkpoint_identity(context)
+        issues.extend(
+            issue
+            for issue in checkpoint_issues
+            if issue.code.startswith("CHANGE_")
+            and issue.code != "CHANGE_REQUEST_PENDING"
+        )
+    roadmap_path = roadmaps[0].path.relative_to(root).as_posix()
+    authorized_planning_paths = {
+        record.plan_path.as_posix(),
+        roadmap_path,
+    }
+    baseline_paths = set(record.baseline_dirty_paths)
+    commit_scope_paths = {
+        canonical
+        for row in record.commit_scope
+        if (canonical := _canonical_path(row.path)) is not None
+    }
+    approved_transfers: list[str] = []
+    for transfer in record.baseline_ownership_transfers:
+        canonical = _canonical_path(transfer)
+        transfer_valid = True
+        if canonical == expected_spec_path:
+            transfer_valid = False
+            issues.append(
+                ValidationIssue(
+                    code="SPEC_BASELINE_TRANSFER_FORBIDDEN",
+                    path=record.plan_path,
+                    line=record.baseline_ownership_transfers_line or 1,
+                    message=(
+                        "baseline ownership transfer cannot authorize the "
+                        f"authoritative spec: {expected_spec_path}"
+                    ),
+                )
+            )
+        if canonical is None or canonical not in authorized_planning_paths:
+            transfer_valid = False
+            issues.append(
+                ValidationIssue(
+                    code="STAGED_SCOPE_INVALID",
+                    path=record.plan_path,
+                    line=record.baseline_ownership_transfers_line or 1,
+                    message=(
+                        "baseline ownership transfer is not authorized for "
+                        f"this milestone: {transfer}"
+                    ),
+                )
+            )
+        if canonical is None or canonical not in baseline_paths:
+            transfer_valid = False
+            issues.append(
+                ValidationIssue(
+                    code="STAGED_SCOPE_INVALID",
+                    path=record.plan_path,
+                    line=record.baseline_ownership_transfers_line or 1,
+                    message=(
+                        "baseline ownership transfer is absent from baseline "
+                        f"dirty paths: {transfer}"
+                    ),
+                )
+            )
+        if canonical is None or canonical not in commit_scope_paths:
+            transfer_valid = False
+            issues.append(
+                ValidationIssue(
+                    code="STAGED_SCOPE_INVALID",
+                    path=record.plan_path,
+                    line=record.baseline_ownership_transfers_line or 1,
+                    message=(
+                        "baseline ownership transfer is absent from commit "
+                        f"scope: {transfer}"
+                    ),
+                )
+            )
+        if transfer_valid and canonical is not None:
+            approved_transfers.append(canonical)
     try:
+        issues.extend(validate_authoritative_spec(root, expected_spec_path))
         staged_paths = get_staged_paths(root)
         unstaged_paths = _get_unstaged_paths(root)
         staged_deletions = _get_staged_deletions(root)
     except GitInspectionError as error:
         raise PrecommitRuntimeError(error.message) from error
-    issues.extend(validate_staged_scope(record, staged_paths))
+    issues.extend(
+        validate_staged_scope(
+            record,
+            staged_paths,
+            tuple(approved_transfers),
+        )
+    )
     scope_lines = {
         _path_identity(canonical): row.line
         for row in record.commit_scope
